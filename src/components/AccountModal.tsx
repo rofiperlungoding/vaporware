@@ -4,6 +4,9 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { saveAccount, type Account } from "@/lib/profile";
 import { getSessionId } from "@/lib/session";
+import { track } from "@/lib/track";
+import { FEATURES } from "@/lib/config";
+import { hasConsent, setConsent } from "@/lib/trust";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +21,7 @@ export default function AccountModal({
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [agreed, setAgreed] = useState(hasConsent());
   const [error, setError] = useState<string | null>(null);
 
   function submit() {
@@ -29,14 +33,22 @@ export default function AccountModal({
       setError("That email doesn't look right.");
       return;
     }
+    if (FEATURES.trustLayer && !agreed) {
+      setError("Tick the box so we know it's okay to save your picks.");
+      return;
+    }
     const account = saveAccount(name, email);
-    pendo.identify({
-      visitor: {
-        id: getSessionId(),
-        email: account.email,
-        full_name: account.name,
-      },
-    });
+    setConsent(true);
+    track("trust_consent_given", { session_id: getSessionId() });
+    if (typeof pendo !== "undefined") {
+      pendo.identify({
+        visitor: {
+          id: getSessionId(),
+          email: account.email,
+          full_name: account.name,
+        },
+      });
+    }
     onCreated(account);
   }
 
@@ -90,6 +102,21 @@ export default function AccountModal({
             />
           </label>
         </div>
+
+        {FEATURES.trustLayer ? (
+          <label className="mt-4 flex items-start gap-2 text-[12px] leading-snug text-[var(--color-ink)]">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-cash-2)]"
+            />
+            <span>
+              Save my picks on this device. We don&apos;t sell data, and you can
+              clear it anytime.
+            </span>
+          </label>
+        ) : null}
 
         {error ? (
           <p className="mt-3 font-mono text-xs text-[var(--color-nope)]">{error}</p>

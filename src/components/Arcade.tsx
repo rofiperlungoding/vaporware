@@ -32,6 +32,8 @@ import MyPicksModal from "./MyPicksModal";
 import AccountModal from "./AccountModal";
 import SignupNudge from "./SignupNudge";
 import Receipt from "./Receipt";
+import TrustDisclosure from "./TrustDisclosure";
+import { hasSeenDisclosure, markDisclosure } from "@/lib/trust";
 
 type Phase = "swipe" | "checkout" | "reveal";
 type Outcome = "paid" | "bailed" | "passed";
@@ -82,6 +84,7 @@ export default function Arcade() {
   const [picks, setPicks] = useState<Pick[]>([]);
   const [account, setAccount] = useState<Account | null>(null);
   const [nudgeDismissed, setNudgeDismissed] = useState(true);
+  const [showTrust, setShowTrust] = useState(false);
 
   const loadIdeas = useCallback(async () => {
     setLoading(true);
@@ -106,6 +109,10 @@ export default function Arcade() {
     setPicks(getPicks());
     setAccount(getAccount());
     setNudgeDismissed(isNudgeDismissed());
+    if (FEATURES.trustLayer && !hasSeenDisclosure()) {
+      setShowTrust(true);
+      track("trust_disclosure_shown", { session_id: getSessionId() });
+    }
   }, [loadIdeas]);
 
   const current = deck[index];
@@ -215,6 +222,14 @@ export default function Arcade() {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-6">
+      {showTrust ? (
+        <TrustDisclosure
+          onDismiss={() => {
+            markDisclosure();
+            setShowTrust(false);
+          }}
+        />
+      ) : null}
       <header className="flex items-end justify-between border-b-2 border-[var(--color-ink)] pb-4">
         <div>
           <h1 className="font-display text-3xl font-bold leading-none tracking-tight text-[var(--color-ink)]">

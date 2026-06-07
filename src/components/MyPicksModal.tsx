@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
 import type { Account, Pick } from "@/lib/profile";
+import { FEATURES } from "@/lib/config";
+import { clearAllData } from "@/lib/trust";
 
 export default function MyPicksModal({
   picks,
@@ -108,6 +110,24 @@ export default function MyPicksModal({
             >
               clear my picks
             </button>
+          ) : null}
+
+          {FEATURES.trustLayer ? (
+            <div className="mt-4 border-t border-dashed border-[var(--color-ink)]/40 pt-3">
+              <p className="font-mono text-[10px] leading-relaxed text-[var(--color-ink-soft)]">
+                We store your picks (and name/email if you make an account) on
+                this device only — no server profile, no selling data.
+              </p>
+              <button
+                onClick={() => {
+                  clearAllData();
+                  window.location.reload();
+                }}
+                className="mt-2 w-full text-center font-mono text-[11px] text-[var(--color-ink-soft)] underline-offset-4 hover:text-[var(--color-nope)] hover:underline"
+              >
+                clear all my data
+              </button>
+            </div>
           ) : null}
         </div>
       </motion.div>

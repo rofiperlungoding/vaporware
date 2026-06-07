@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { saveAccount, type Account } from "@/lib/profile";
+import { getSessionId } from "@/lib/session";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,7 +29,15 @@ export default function AccountModal({
       setError("That email doesn't look right.");
       return;
     }
-    onCreated(saveAccount(name, email));
+    const account = saveAccount(name, email);
+    pendo.identify({
+      visitor: {
+        id: getSessionId(),
+        email: account.email,
+        full_name: account.name,
+      },
+    });
+    onCreated(account);
   }
 
   return (

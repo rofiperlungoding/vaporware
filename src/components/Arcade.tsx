@@ -7,6 +7,7 @@ import type { IdeaWithStats } from "@/lib/types";
 import { APP_NAME, APP_TAGLINE, SIGNUP_NUDGE_AFTER } from "@/lib/config";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
+import { shareResult } from "@/lib/share";
 import {
   addPick,
   clearPicks,
@@ -230,7 +231,11 @@ export default function Arcade() {
               </AnimatePresence>
             </>
           ) : (
-            <EndScreen onReplay={loadIdeas} onSubmit={() => setShowSubmit(true)} />
+            <EndScreen
+              picks={picks}
+              onReplay={loadIdeas}
+              onSubmit={() => setShowSubmit(true)}
+            />
           )}
         </div>
 
@@ -324,12 +329,32 @@ export default function Arcade() {
 }
 
 function EndScreen({
+  picks,
   onReplay,
   onSubmit,
 }: {
+  picks: Pick[];
   onReplay: () => void;
   onSubmit: () => void;
 }) {
+  const [shareLabel, setShareLabel] = useState("Share my verdict");
+
+  const paid = picks.filter((p) => p.decision === "paid").length;
+  const bailed = picks.filter((p) => p.decision === "bailed").length;
+
+  async function onShare() {
+    const text =
+      `I judged ${picks.length} startup ideas on ${APP_NAME}. ` +
+      `I'd actually pay for ${paid}, but I'm all talk on ${bailed}. ` +
+      `What would you really click "pay" for?`;
+    const result = await shareResult(text);
+    track("share_verdict", { result, picks: picks.length });
+    if (result === "copied") setShareLabel("Copied to clipboard ✓");
+    else if (result === "shared") setShareLabel("Thanks for sharing ✓");
+    else setShareLabel("Couldn't share — try again");
+    window.setTimeout(() => setShareLabel("Share my verdict"), 2500);
+  }
+
   return (
     <div className="flex h-full flex-col items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-8 text-center shadow-hard">
       <p className="font-display text-5xl">♠</p>
@@ -337,7 +362,8 @@ function EndScreen({
         You judged the whole deck
       </h2>
       <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
-        Now go see which ideas everyone loved but nobody would actually pay for.
+        You&apos;d pay for {paid}, but you&apos;re all talk on {bailed}. Now see
+        which ideas everyone loved but nobody would actually pay for.
       </p>
       <div className="mt-6 flex w-full flex-col gap-3">
         <a
@@ -346,6 +372,12 @@ function EndScreen({
         >
           See the Hall of Delusion →
         </a>
+        <button
+          onClick={onShare}
+          className="border-2 border-[var(--color-ink)] bg-[var(--color-gold)] py-3 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
+        >
+          {shareLabel}
+        </button>
         <button
           onClick={onSubmit}
           className="border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)] py-3 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"

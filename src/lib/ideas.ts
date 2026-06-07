@@ -188,4 +188,184 @@ export const SEED_IDEAS: Idea[] = [
     source: "seed",
     baseSaidYes: 161, baseSaidNo: 155, baseDidClick: 13, // 51% say · 8% do
   },
+  {
+    id: "seed-chat-summary",
+    oneLiner: "AI that summarizes the group chat you ignored for three days",
+    tagline: "300 messages in, two of them mattered. Here they are.",
+    category: "Productivity",
+    price: "$4/mo",
+    source: "seed",
+    baseSaidYes: 144, baseSaidNo: 144, baseDidClick: 30, // 50% say · 21% do
+  },
+  {
+    id: "seed-second-brain",
+    oneLiner: "Turns your messy bookmarks into a searchable second brain",
+    tagline: "Everything you saved and forgot, finally findable.",
+    category: "Productivity",
+    price: "$6/mo",
+    source: "seed",
+    baseSaidYes: 109, baseSaidNo: 138, baseDidClick: 28, // 44% say · 26% do
+  },
+  {
+    id: "seed-bill-negotiator",
+    oneLiner: "Negotiates your bills with providers so you never call again",
+    tagline: "It sits on hold, you keep the savings.",
+    category: "Fintech",
+    price: "$9/mo",
+    source: "seed",
+    baseSaidYes: 195, baseSaidNo: 136, baseDidClick: 64, // 59% say · 33% do
+  },
+  {
+    id: "seed-text-mad",
+    oneLiner: "Tells you if that text means they're actually mad at you",
+    tagline: "Decode the 'k.' before you spiral for an hour.",
+    category: "Consumer",
+    price: "$3/mo",
+    source: "seed",
+    baseSaidYes: 144, baseSaidNo: 132, baseDidClick: 16, // 52% say · 11% do
+  },
+  {
+    id: "seed-auto-tests",
+    oneLiner: "Auto-generates unit tests from your messy untested code",
+    tagline: "Coverage goes up while you do literally nothing.",
+    category: "Dev",
+    price: "$12/mo",
+    source: "seed",
+    baseSaidYes: 163, baseSaidNo: 139, baseDidClick: 62, // 54% say · 38% do
+  },
+  {
+    id: "seed-fake-emergency",
+    oneLiner: "Panic button that calls you with a fake emergency to escape bad dates",
+    tagline: "Your 'sick aunt' rings right on schedule.",
+    category: "Consumer",
+    price: "$2/mo",
+    source: "seed",
+    baseSaidYes: 150, baseSaidNo: 113, baseDidClick: 14, // 57% say · 9% do
+  },
+  {
+    id: "seed-later-roast",
+    oneLiner: "Tracks every 'I'll do it later' and roasts you for it weekly",
+    tagline: "A receipt of your own procrastination, delivered Sundays.",
+    category: "Productivity",
+    price: "$4/mo",
+    source: "seed",
+    baseSaidYes: 90, baseSaidNo: 129, baseDidClick: 11, // 41% say · 12% do
+  },
+  {
+    id: "seed-trip-split",
+    oneLiner: "Splits group trip expenses without the awkward spreadsheet",
+    tagline: "Who paid for what, settled before you land home.",
+    category: "Fintech",
+    price: "$3/mo",
+    source: "seed",
+    baseSaidYes: 141, baseSaidNo: 153, baseDidClick: 62, // 48% say · 44% do
+  },
+  {
+    id: "seed-sous-chef",
+    oneLiner: "AI sous-chef that adjusts the recipe as you improvise",
+    tagline: "Out of an ingredient? It re-plans on the fly.",
+    category: "Consumer",
+    price: "$5/mo",
+    source: "seed",
+    baseSaidYes: 81, baseSaidNo: 127, baseDidClick: 12, // 39% say · 15% do
+  },
+  {
+    id: "seed-highlight-digest",
+    oneLiner: "Turns your reading highlights into a weekly insight email",
+    tagline: "The best lines you saved, resurfaced before you forget them.",
+    category: "Productivity",
+    price: "$5/mo",
+    source: "seed",
+    baseSaidYes: 101, baseSaidNo: 135, baseDidClick: 29, // 43% say · 29% do
+  },
+  {
+    id: "seed-burnout-detect",
+    oneLiner: "Detects burnout from your calendar and forces a day off",
+    tagline: "When the meetings cross the line, it blocks the day for you.",
+    category: "HR",
+    price: "$8/mo",
+    source: "seed",
+    baseSaidYes: 165, baseSaidNo: 147, baseDidClick: 21, // 53% say · 13% do
+  },
+  {
+    id: "seed-flight-combo",
+    oneLiner: "Books the cheapest flight combo while you sleep",
+    tagline: "You set the trip, it hunts the fares overnight.",
+    category: "Travel",
+    price: "$7/mo",
+    source: "seed",
+    baseSaidYes: 218, baseSaidNo: 140, baseDidClick: 89, // 61% say · 41% do
+  },
+  {
+    id: "seed-review-replies",
+    oneLiner: "AI that drafts replies to your one-star reviews",
+    tagline: "Stay classy when you really want to type in all caps.",
+    category: "SMB",
+    price: "$10/mo",
+    source: "seed",
+    baseSaidYes: 71, baseSaidNo: 120, baseDidClick: 35, // 37% say · 49% do
+  },
+  {
+    id: "seed-startup-namer",
+    oneLiner: "Names your startup and checks the domain in one go",
+    tagline: "Stop falling in love with names that are already taken.",
+    category: "Product",
+    price: "$6/mo",
+    source: "seed",
+    baseSaidYes: 111, baseSaidNo: 131, baseDidClick: 19, // 46% say · 17% do
+  },
+  {
+    id: "seed-who-is-this",
+    oneLiner: "Reminds you who someone is right before you meet them",
+    tagline: "A two-line dossier so you never blank on a name again.",
+    category: "Consumer",
+    price: "$5/mo",
+    source: "seed",
+    baseSaidYes: 136, baseSaidNo: 135, baseDidClick: 30, // 50% say · 22% do
+  },
+  {
+    id: "seed-whiteboard-diagram",
+    oneLiner: "Turns whiteboard photos into editable diagrams",
+    tagline: "Snap the meeting scrawl, get a real flowchart.",
+    category: "Product",
+    price: "$9/mo",
+    source: "seed",
+    baseSaidYes: 121, baseSaidNo: 137, baseDidClick: 44, // 47% say · 36% do
+  },
+  {
+    id: "seed-spam-shield",
+    oneLiner: "A second phone number that fields spam calls for you",
+    tagline: "Robocallers argue with a bot instead of you.",
+    category: "Consumer",
+    price: "$4/mo",
+    source: "seed",
+    baseSaidYes: 158, baseSaidNo: 129, baseDidClick: 74, // 55% say · 47% do
+  },
+  {
+    id: "seed-resume-grader",
+    oneLiner: "Grades your resume like a ruthless recruiter",
+    tagline: "The brutal six-second skim, before a human gives it.",
+    category: "Career",
+    price: "$5/mo",
+    source: "seed",
+    baseSaidYes: 129, baseSaidNo: 134, baseDidClick: 25, // 49% say · 19% do
+  },
+  {
+    id: "seed-energy-week",
+    oneLiner: "Plans your week around your actual energy levels, not the clock",
+    tagline: "Deep work when you're sharp, busywork when you're toast.",
+    category: "Productivity",
+    price: "$6/mo",
+    source: "seed",
+    baseSaidYes: 152, baseSaidNo: 146, baseDidClick: 21, // 51% say · 14% do
+  },
+  {
+    id: "seed-trial-canceler",
+    oneLiner: "Watches your free trials and cancels them before they bill",
+    tagline: "Never get charged for the thing you forgot to quit.",
+    category: "Fintech",
+    price: "$3/mo",
+    source: "seed",
+    baseSaidYes: 198, baseSaidNo: 143, baseDidClick: 101, // 58% say · 51% do
+  },
 ];

@@ -9,6 +9,8 @@ shows you who *actually* pulled out their wallet. The gap between what people
 Built for the [Mind the Product — World Product Day "Everyone Ships Now"](https://mindtheproduct.devpost.com/)
 hackathon.
 
+**Live:** https://vapor-wave.netlify.app
+
 ## The idea
 
 Stated intent is cheap. On a swipe, lots of people happily say "take my money".
@@ -47,6 +49,7 @@ teach product teams: don't trust what users say, measure what they do.
 - Tailwind CSS v4
 - **Supabase (Postgres)** for ideas + votes — all access isolated in
   `src/lib/store.ts`; the browser never talks to Supabase directly
+- **Deployed on Netlify** (auto-deploys from GitHub); config in `netlify.toml`
 
 ## Setup
 

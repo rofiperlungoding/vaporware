@@ -158,13 +158,15 @@ this intellectual honesty is itself a point in our favour with product judges.
 
 ## 8. Current status
 
-- ✅ Working end-to-end **locally** (`npm run dev`)
+- ✅ **Live in production:** https://vapor-wave.netlify.app (Netlify, auto-deploys
+  from GitHub on every push)
 - ✅ **Supabase (Postgres) live** — schema migrated + 40 ideas seeded; reads and
-  writes verified end-to-end (swipe + checkout persist real rows)
+  writes verified end-to-end on the deployed site (swipe + checkout persist real rows)
+- ✅ Working end-to-end **locally** (`npm run dev`)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
-- ⛔ **Not yet deployed** to a public URL (now unblocked — data is in Postgres)
-- ⛔ **Novus.ai not yet installed** (mandatory for eligibility)
+- ⛔ **Novus.ai not yet installed** (mandatory for eligibility — the one hard blocker left)
 - ⛔ No demo video / written submission yet
+- ⚠️ Supabase key was shared in plaintext during setup — rotate before going public
 
 ---
 
@@ -174,14 +176,15 @@ this intellectual honesty is itself a point in our favour with product judges.
 |---|---|---|---|
 | 1 | Install **Novus.ai** snippet | Novus account + snippet | **Eligibility** |
 | 2 | ~~Move persistence to **Supabase**~~ | — | ✅ Done |
-| 3 | **Deploy** to a public URL (Netlify/Vercel) | hosting account | **Required** |
-| 4 | Record **2–3 min demo video** | — | Required |
-| 5 | Write submission description | — | Required |
-| 6 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
-| 7 | (Optional) designed OG share image | — | Polish |
+| 3 | ~~**Deploy** to a public URL~~ | — | ✅ Done (Netlify) |
+| 4 | Rotate the Supabase key shared in chat | — | Before public |
+| 5 | Record **2–3 min demo video** | — | Required |
+| 6 | Write submission description | — | Required |
+| 7 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
+| 8 | (Optional) designed OG share image | — | Polish |
 
-> Persistence is now on Supabase (Postgres), so the old local-JSON read-only-FS
-> problem is gone — deploying to a serverless host (Netlify/Vercel) is unblocked.
+> Deployed on Netlify with Supabase persistence — the static URL is live and
+> auto-redeploys from GitHub. **Novus is now the only hard eligibility item left.**
 
 ---
 
@@ -190,12 +193,12 @@ this intellectual honesty is itself a point in our favour with product judges.
 - **Product Thinking (25%)** — *Strong.* Sharp, specific problem; clear audience
   (anyone who's been burned by "users said they wanted it").
 - **Craft & Execution (25%)** — *Good and improving.* Distinct visual identity,
-  considered copy, works end-to-end. Risk: needs final polish + must be live.
+  considered copy, works end-to-end, **live in production**. Risk: final polish.
 - **Originality & Ambition (25%)** — *Strong.* The say-do gap twist is
   differentiated from the saturated "roast/validate" tools.
-- **Shippedness (25%)** — *Improving.* Backend is live on Supabase with real
-  persistence verified end-to-end. Remaining gap: deploy to a public URL +
-  install Novus — both gated on external accounts, both now unblocked.
+- **Shippedness (25%)** — *Strong now.* Deployed and public on Netlify, backed by
+  Supabase, with reads/writes verified live. Remaining: install Novus (so it's
+  measurable per the brief) — the last eligibility item.
 
 ---
 
@@ -224,6 +227,7 @@ this intellectual honesty is itself a point in our favour with product judges.
 
 ## 12. Links
 
+- **Live site:** https://vapor-wave.netlify.app
 - Hackathon: https://mindtheproduct.devpost.com/
 - Novus / Pendo: https://novus.ai · https://www.pendo.io/pendo-blog/introducing-novus/
 - Repo: https://github.com/rofiperlungoding/vaporware

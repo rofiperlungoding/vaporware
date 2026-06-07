@@ -39,6 +39,10 @@ teach product teams: don't trust what users say, measure what they do.
 - **My Picks** — your personal index (would-pay / all-talk / passed)
 - Gentle **account nudge** after a few picks (save your progress)
 - **Share your verdict** (Web Share API + clipboard fallback)
+- **The Receipt** — end-of-deck climax: your personal say-do gap + verdict stamp
+- **Grounded AI (Mistral)** — an AI roast on your Receipt that names the specific
+  ideas you said yes to but bailed on, plus an AI "painted-door read" on ideas
+  you submit. Honestly labeled, degrades to static text if AI is off.
 - Submit your own idea into the arena
 - Accessible: keyboard support + reduced-motion handling
 
@@ -52,6 +56,21 @@ teach product teams: don't trust what users say, measure what they do.
 - **Deployed on Netlify** (auto-deploys from GitHub); config in `netlify.toml`
 - **Novus.ai (Pendo)** behavioral analytics — loaded once in `layout.tsx`, all
   events funnel through `src/lib/track.ts`
+- **Mistral AI** (`mistral-small-latest`) — server-only, grounded enhancement
+  layer; all calls in route handlers via `src/lib/mistral.ts`, never the browser
+
+## AI (grounded, not generated)
+
+Two AI surfaces, both fed **only the player's real session data** and labeled as AI:
+
+- **Verdict Narrator** (`/api/verdict-narration`) — on the Receipt, names the
+  specific ideas you said yes to but didn't pay for.
+- **Painted-door Read** (`/api/painted-door-read`) — on idea submit, predicts the
+  idea's say-do trap, grounded in the painted-door / intention-behavior framework.
+
+Hardened: server-only key, 4s timeout + 1 retry, JSON-validated, per-IP throttle,
+short-TTL cache, sanitized inputs (no PII). **If `MISTRAL_API_KEY` is unset or the
+call fails, every surface falls back to static text** — the app stays fully usable.
 
 ## Analytics (the say-do gap, measurable)
 
@@ -63,7 +82,8 @@ Events fire through the single `src/lib/track.ts` adapter:
 - **do-rate** = `paid / checkout_opened`
 
 Set `NEXT_PUBLIC_NOVUS_PROJECT_ID` (public client key) to enable the agent; if
-unset, tracking no-ops safely.
+unset, tracking no-ops safely. Set `MISTRAL_API_KEY` (server-only) to enable the
+AI surfaces; if unset, they fall back to static text.
 
 ## Setup
 
@@ -115,14 +135,22 @@ src/
     leaderboard/          # the scoreboard
     api/ideas/route.ts    # list + create ideas
     api/vote/route.ts     # record a swipe / checkout decision
+    api/receipt-image/route.tsx      # shareable OG receipt (next/og)
+    api/verdict-narration/route.ts   # grounded AI roast (Mistral)
+    api/painted-door-read/route.ts   # AI say-do prediction (Mistral)
   components/             # SwipeCard, CheckoutModal, Reveal, SubmitModal,
                           # MyPicksModal, AccountModal, SignupNudge, Leaderboard,
-                          # PendoInit (Novus visitor init)
+                          # Receipt (end-of-deck), PendoInit (Novus visitor init)
   lib/
     ideas.ts              # seeded ideas (realistic baselines)
     store.ts              # persistence layer (Supabase)
     supabase.ts           # server-only Supabase client (lazy)
     profile.ts            # client picks + local account
+    verdict.ts            # scorecard selector + static verdict tiers (AI fallback)
+    ai-context.ts         # builds the grounding payload for the AI
+    mistral.ts            # server-only Mistral client (hardened)
+    ai-guards.ts          # throttle + cache + sanitize (server-only)
+    moments.ts            # once-per-session "caught you" flag
     config.ts             # brand name, copy, thresholds
     track.ts              # analytics adapter (single Novus integration point)
     share.ts              # share helper (Web Share + clipboard)

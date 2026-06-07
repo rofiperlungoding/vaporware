@@ -109,6 +109,11 @@ This gives the playful arcade a serious, credible spine.
   passed), saved on-device
 - **Account nudge** after 5 picks ("save your progress") — local account for now
 - **Share my verdict** (Web Share API + clipboard fallback)
+- **The Receipt** — end-of-deck climax showing your *personal* say-do gap, a
+  verdict stamp, and a shareable receipt image (`next/og`)
+- **Grounded AI (Mistral)** — a verdict roast that names the specific ideas you
+  said yes to but bailed on, and a "painted-door read" on submitted ideas; both
+  honestly labeled and degrade to static text if AI is off
 - OpenGraph/Twitter metadata for clean link previews
 - 40 seeded ideas with realistic baselines (see §7)
 - An editorial / "receipt" visual identity (warm paper, serif display, hard
@@ -132,13 +137,17 @@ This gives the playful arcade a serious, credible spine.
 - `src/lib/supabase.ts` — lazy, server-only Supabase client
 - `src/lib/profile.ts` — client profile/picks/account (local; swap for real auth)
 - `src/lib/track.ts` — single Novus/Pendo integration point (installed)
+- `src/lib/mistral.ts` — server-only Mistral client; AI calls only in route
+  handlers (`/api/verdict-narration`, `/api/painted-door-read`), never the browser
 
 ```
 src/
-  app/            page (arcade), /leaderboard, /api/ideas, /api/vote, layout (Pendo loader)
+  app/            page (arcade), /leaderboard, layout (Pendo loader),
+                  api/{ideas,vote,receipt-image,verdict-narration,painted-door-read}
   components/     SwipeCard, CheckoutModal, Reveal, SubmitModal, MyPicksModal,
-                  AccountModal, SignupNudge, LeaderboardClient, PendoInit
-  lib/            ideas (seed), store, supabase, profile, config, track, share, session
+                  AccountModal, SignupNudge, LeaderboardClient, Receipt, PendoInit
+  lib/            ideas, store, supabase, profile, verdict, ai-context, mistral,
+                  ai-guards, moments, config, track, share, session
   global.d.ts     pendo global type
 supabase/         migrations/0001_init.sql
 scripts/          seed.ts (npm run db:seed)
@@ -168,12 +177,16 @@ this intellectual honesty is itself a point in our favour with product judges.
 - ✅ **Novus.ai (Pendo) installed** — agent loads + initializes an anonymous
   visitor (session id), and behavioral events fire through the single
   `src/lib/track.ts` shim
+- ✅ **Grounded AI (Mistral) live** — verdict narrator + painted-door read,
+  fed only the player's real session data, verified end-to-end with a real key;
+  falls back to static text if the key is removed
 - ✅ Working end-to-end **locally** (`npm run dev`)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
 - ⛔ Confirm events landing in the Novus dashboard, then screenshot for submission
 - ⛔ No demo video / written submission yet
-- ⚠️ Site is already public and the Supabase key was shared in plaintext during
-  setup — rotate it now (not committed to the repo, but the exposure window is open)
+- ⚠️ Site is already public; the Supabase key **and** the Mistral key were shared
+  in plaintext during setup — rotate both (neither is committed to the repo, but
+  the exposure window is open)
 
 ---
 
@@ -185,7 +198,7 @@ this intellectual honesty is itself a point in our favour with product judges.
 | 2 | ~~Move persistence to **Supabase**~~ | — | ✅ Done |
 | 3 | ~~**Deploy** to a public URL~~ | — | ✅ Done (Netlify) |
 | 4 | Verify events in Novus dashboard + screenshot | live deploy | Submission proof |
-| 5 | Rotate the Supabase key shared in chat | — | Before public |
+| 5 | Rotate the Supabase + Mistral keys shared in chat | — | Before wide demo |
 | 6 | Record **2–3 min demo video** | — | Required |
 | 7 | Write submission description | — | Required |
 | 8 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
@@ -204,16 +217,28 @@ this intellectual honesty is itself a point in our favour with product judges.
 > init) was merged. PR #2 (duplicate track events on the old naming, missing
 > `idea_viewed`/`checkout_opened`) was closed to avoid double-counting.
 
+### AI surfaces + events (Mistral, grounded)
+Two server-only AI routes, fed only the player's real data, both labeled as AI
+and degrading to static text on any failure:
+- `/api/verdict-narration` → names ideas the player said yes to but bailed on
+- `/api/painted-door-read` → predicts a submitted idea's say-do trap
+
+New Novus events: `ai_verdict_shown {tier, grounded}`, `ai_read_requested`,
+`ai_read_shown {grounded}` (`grounded:false` = static fallback was used).
+
 ---
 
 ## 10. Self-assessment vs judging criteria
 
 - **Product Thinking (25%)** — *Strong.* Sharp, specific problem; clear audience
   (anyone who's been burned by "users said they wanted it").
-- **Craft & Execution (25%)** — *Good and improving.* Distinct visual identity,
-  considered copy, works end-to-end, **live in production**. Risk: final polish.
+- **Craft & Execution (25%)** — *Strong.* Distinct editorial identity, considered
+  copy, works end-to-end, **live in production**, with a polished end-of-deck
+  Receipt. Risk: final polish only.
 - **Originality & Ambition (25%)** — *Strong.* The say-do gap twist is
-  differentiated from the saturated "roast/validate" tools.
+  differentiated from saturated "roast/validate" tools, and the **grounded AI**
+  (names your real contradictions, never invents) is a distinctive, honest use of
+  AI rather than slop.
 - **Shippedness (25%)** — *Strong.* Deployed and public on Netlify, backed by
   Supabase, with Novus installed and the say-do gap measurable via real
   behavioral events. All hard eligibility items met.
@@ -247,5 +272,6 @@ this intellectual honesty is itself a point in our favour with product judges.
 - **Live site:** https://vapor-wave.netlify.app
 - Hackathon: https://mindtheproduct.devpost.com/
 - Novus / Pendo: https://novus.ai · https://www.pendo.io/pendo-blog/introducing-novus/
+- Mistral AI: https://docs.mistral.ai/ (model `mistral-small-latest`)
 - Repo: https://github.com/rofiperlungoding/vaporware
 - Background reading: painted-door testing, the intention–behavior gap

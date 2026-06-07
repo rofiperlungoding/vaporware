@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import type { IdeaWithStats } from "@/lib/types";
+import { getSessionId } from "@/lib/session";
+import { track } from "@/lib/track";
+
+type ReadState = "loading" | "ready" | "off";
+type DoorRead = { predictedPattern: string; trap: string; oneLiner: string };
+
+const STATIC_READ =
+  "New ideas almost always over-index on \u201Csay\u201D. Real votes will settle whether the wallet follows.";
 
 export default function SubmitModal({
   onClose,
@@ -17,6 +25,38 @@ export default function SubmitModal({
   const [price, setPrice] = useState("$5/mo");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [phase, setPhase] = useState<"form" | "read">("form");
+  const [createdIdea, setCreatedIdea] = useState<IdeaWithStats | null>(null);
+  const [readState, setReadState] = useState<ReadState>("loading");
+  const [read, setRead] = useState<DoorRead | null>(null);
+
+  async function fetchRead(title: string, description: string) {
+    track("ai_read_requested", { session_id: getSessionId() });
+    try {
+      const res = await fetch("/api/painted-door-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, description }),
+      });
+      const data = await res.json();
+      if (data?.ok && (data.predictedPattern || data.oneLiner)) {
+        setRead({
+          predictedPattern: data.predictedPattern ?? "",
+          trap: data.trap ?? "",
+          oneLiner: data.oneLiner ?? "",
+        });
+        setReadState("ready");
+        track("ai_read_shown", { grounded: true, session_id: getSessionId() });
+        return;
+      }
+      setReadState("off");
+      track("ai_read_shown", { grounded: false, session_id: getSessionId() });
+    } catch {
+      setReadState("off");
+      track("ai_read_shown", { grounded: false, session_id: getSessionId() });
+    }
+  }
 
   async function submit() {
     if (oneLiner.trim().length < 8) {
@@ -36,12 +76,20 @@ export default function SubmitModal({
         setError(data.error ?? "Something went wrong.");
         return;
       }
-      onCreated(data.idea as IdeaWithStats);
+      const idea = data.idea as IdeaWithStats;
+      setCreatedIdea(idea);
+      setPhase("read");
+      setReadState("loading");
+      fetchRead(oneLiner.trim(), tagline.trim());
     } catch {
       setError("Network error. Try again.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function finish() {
+    if (createdIdea) onCreated(createdIdea);
   }
 
   return (
@@ -50,7 +98,7 @@ export default function SubmitModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[300] flex items-center justify-center bg-[var(--color-ink)]/45 p-4 backdrop-blur-[2px]"
-      onClick={onClose}
+      onClick={phase === "form" ? onClose : undefined}
     >
       <motion.div
         initial={{ y: 26, opacity: 0 }}
@@ -60,72 +108,132 @@ export default function SubmitModal({
         className="w-full max-w-md border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-6 shadow-hard"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="font-display text-xl font-bold text-[var(--color-ink)]">
-          Throw your idea in the arena
-        </h3>
-        <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
-          Strangers will swipe it. Then find out how many actually click pay.
-        </p>
+        {phase === "form" ? (
+          <>
+            <h3 className="font-display text-xl font-bold text-[var(--color-ink)]">
+              Throw your idea in the arena
+            </h3>
+            <p className="mt-1 text-sm text-[var(--color-ink-soft)]">
+              Strangers will swipe it. Then find out how many actually click pay.
+            </p>
 
-        <div className="mt-5 space-y-3">
-          <Field label="One-liner *">
-            <textarea
-              value={oneLiner}
-              onChange={(e) => setOneLiner(e.target.value)}
-              rows={2}
-              maxLength={120}
-              placeholder="AI that books your dentist by arguing with the receptionist"
-              className="w-full resize-none border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
-            />
-          </Field>
-          <Field label="Tagline">
-            <input
-              value={tagline}
-              onChange={(e) => setTagline(e.target.value)}
-              maxLength={160}
-              placeholder="One sentence on why someone would care."
-              className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
-            />
-          </Field>
-          <div className="flex gap-3">
-            <Field label="Category">
-              <input
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                maxLength={40}
-                className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
-              />
-            </Field>
-            <Field label="Price">
-              <input
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                maxLength={20}
-                className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
-              />
-            </Field>
-          </div>
-        </div>
+            <div className="mt-5 space-y-3">
+              <Field label="One-liner *">
+                <textarea
+                  value={oneLiner}
+                  onChange={(e) => setOneLiner(e.target.value)}
+                  rows={2}
+                  maxLength={120}
+                  placeholder="AI that books your dentist by arguing with the receptionist"
+                  className="w-full resize-none border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
+                />
+              </Field>
+              <Field label="Tagline">
+                <input
+                  value={tagline}
+                  onChange={(e) => setTagline(e.target.value)}
+                  maxLength={160}
+                  placeholder="One sentence on why someone would care."
+                  className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
+                />
+              </Field>
+              <div className="flex gap-3">
+                <Field label="Category">
+                  <input
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    maxLength={40}
+                    className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
+                  />
+                </Field>
+                <Field label="Price">
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    maxLength={20}
+                    className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-3 py-2 text-sm text-[var(--color-ink)] outline-none focus:bg-[var(--color-card)]"
+                  />
+                </Field>
+              </div>
+            </div>
 
-        {error ? (
-          <p className="mt-3 font-mono text-xs text-[var(--color-nope)]">{error}</p>
-        ) : null}
+            {error ? (
+              <p className="mt-3 font-mono text-xs text-[var(--color-nope)]">
+                {error}
+              </p>
+            ) : null}
 
-        <div className="mt-5 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)] py-2.5 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={submit}
-            disabled={submitting}
-            className="flex-1 border-2 border-[var(--color-ink)] bg-[var(--color-cash)] py-2.5 font-display text-sm font-bold text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
-          >
-            {submitting ? "Launching…" : "Launch it"}
-          </button>
-        </div>
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)] py-2.5 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submit}
+                disabled={submitting}
+                className="flex-1 border-2 border-[var(--color-ink)] bg-[var(--color-cash)] py-2.5 font-display text-sm font-bold text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+              >
+                {submitting ? "Launching…" : "Launch it"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[var(--color-ink-soft)]">
+              Launched · now in the deck
+            </p>
+            <h3 className="mt-1 font-display text-lg font-semibold leading-snug text-[var(--color-ink)]">
+              {oneLiner.trim()}
+            </h3>
+
+            <div className="my-4 border-t border-dashed border-[var(--color-ink)]/40" />
+
+            {readState === "loading" ? (
+              <p className="animate-pulse font-mono text-[12px] uppercase tracking-wider text-[var(--color-ink-soft)]">
+                🤖 reading the door…
+              </p>
+            ) : null}
+
+            {readState === "ready" && read ? (
+              <div>
+                <span className="stamp text-[11px] text-[var(--color-ink-soft)]">
+                  🤖 AI hunch — not crowd data yet
+                </span>
+                <p className="mt-3 text-[14px] font-semibold leading-snug text-[var(--color-ink)]">
+                  {read.oneLiner}
+                </p>
+                {read.predictedPattern ? (
+                  <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
+                    {read.predictedPattern}
+                  </p>
+                ) : null}
+                {read.trap ? (
+                  <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-ink)]">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-nope)]">
+                      Likely trap ·{" "}
+                    </span>
+                    {read.trap}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {readState === "off" ? (
+              <p className="text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
+                {STATIC_READ}
+              </p>
+            ) : null}
+
+            <button
+              onClick={finish}
+              className="mt-6 w-full border-2 border-[var(--color-ink)] bg-[var(--color-cash)] py-2.5 font-display text-sm font-bold text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
+            >
+              Into the deck →
+            </button>
+          </>
+        )}
       </motion.div>
     </motion.div>
   );

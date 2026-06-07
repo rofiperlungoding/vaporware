@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { APP_NAME } from "@/lib/config";
@@ -8,9 +8,13 @@ import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
 import { shareResult } from "@/lib/share";
 import { getSessionScorecard, verdict } from "@/lib/verdict";
+import { buildGrounding } from "@/lib/ai-context";
+import { getPicks } from "@/lib/profile";
 
 const TEAR =
   "linear-gradient(-45deg, var(--color-card) 50%, transparent 0), linear-gradient(45deg, var(--color-card) 50%, transparent 0)";
+
+type AiState = "loading" | "ready" | "off";
 
 export default function Receipt({
   onReplay,
@@ -22,7 +26,13 @@ export default function Receipt({
   const reduceMotion = useReducedMotion();
   const score = useMemo(() => getSessionScorecard(), []);
   const v = useMemo(() => verdict(score.personalGap), [score.personalGap]);
+  const grounding = useMemo(() => buildGrounding(getPicks()), []);
   const [shareLabel, setShareLabel] = useState("Share my receipt");
+
+  const [aiState, setAiState] = useState<AiState>("loading");
+  const [aiHeadline, setAiHeadline] = useState("");
+  const [aiRoast, setAiRoast] = useState("");
+  const requested = useRef(false);
 
   useEffect(() => {
     track("receipt_viewed", {
@@ -33,6 +43,53 @@ export default function Receipt({
       session_id: getSessionId(),
     });
   }, [score, v.id]);
+
+  useEffect(() => {
+    if (requested.current) return;
+    requested.current = true;
+
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/verdict-narration", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(grounding),
+        });
+        const data = await res.json();
+        if (!active) return;
+        if (data?.ok && typeof data.roast === "string" && data.roast) {
+          setAiHeadline(typeof data.headline === "string" ? data.headline : "");
+          setAiRoast(data.roast);
+          setAiState("ready");
+          track("ai_verdict_shown", {
+            tier: v.id,
+            grounded: true,
+            session_id: getSessionId(),
+          });
+          return;
+        }
+        setAiState("off");
+        track("ai_verdict_shown", {
+          tier: v.id,
+          grounded: false,
+          session_id: getSessionId(),
+        });
+      } catch {
+        if (!active) return;
+        setAiState("off");
+        track("ai_verdict_shown", {
+          tier: v.id,
+          grounded: false,
+          session_id: getSessionId(),
+        });
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [grounding, v.id]);
 
   const noPromises = score.saidYesCount === 0;
   const roast = noPromises
@@ -115,6 +172,28 @@ export default function Receipt({
           <p className="mt-3 text-center text-[13px] leading-relaxed text-[var(--color-ink)]">
             {roast}
           </p>
+
+          {aiState === "loading" ? (
+            <p className="mt-4 animate-pulse text-center font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]">
+              🤖 consulting the ledger…
+            </p>
+          ) : null}
+
+          {aiState === "ready" ? (
+            <div className="mt-4 w-full border-t border-dashed border-[var(--color-ink)]/40 pt-4 text-center">
+              <span className="stamp text-[11px] text-[var(--color-ink-soft)]">
+                🤖 AI read
+              </span>
+              {aiHeadline ? (
+                <p className="mt-2 font-display text-base font-bold text-[var(--color-ink)]">
+                  {aiHeadline}
+                </p>
+              ) : null}
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-ink)]">
+                {aiRoast}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <p className="mt-5 text-center font-mono text-[10px] leading-relaxed text-[var(--color-ink-soft)]">

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Auto-sync to GitHub",
+  "description": "After each completed change-set, stage everything, commit (only if there are real changes), and push to origin. Keeps the rofiperlungoding/vaporware repo in sync automatically.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "git add -A && (git diff --cached --quiet || (git commit -m \"auto-sync from Kiro\" && git push))",
+    "timeout": 120
+  }
+}

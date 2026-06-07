@@ -38,6 +38,17 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function emitIdeaEvent(
+  event: string,
+  idea: { id: string; oneLiner: string },
+): void {
+  track(event, {
+    idea_id: idea.id,
+    idea_title: idea.oneLiner,
+    session_id: getSessionId(),
+  });
+}
+
 export default function Arcade() {
   const [deck, setDeck] = useState<IdeaWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +63,7 @@ export default function Arcade() {
 
   const [picks, setPicks] = useState<Pick[]>([]);
   const [account, setAccount] = useState<Account | null>(null);
-  const [nudgeDismissed, setNudgeDismissed] = useState(true); // assume true until mounted
+  const [nudgeDismissed, setNudgeDismissed] = useState(true);
 
   const loadIdeas = useCallback(async () => {
     setLoading(true);
@@ -75,6 +86,10 @@ export default function Arcade() {
   const current = deck[index];
   const remaining = deck.length - index;
 
+  useEffect(() => {
+    if (current) emitIdeaEvent("idea_viewed", current);
+  }, [current]);
+
   const finalizeVote = useCallback(
     async (saidYes: boolean, didClick: boolean, nextOutcome: Outcome) => {
       if (!current) return;
@@ -82,7 +97,6 @@ export default function Arcade() {
       setRevealIdea(current);
       setPhase("reveal");
 
-      // Record the player's own pick locally (their personal index).
       setPicks(
         addPick({
           ideaId: current.id,
@@ -108,7 +122,7 @@ export default function Arcade() {
         const data = await res.json();
         if (res.ok && data.idea) setRevealIdea(data.idea as IdeaWithStats);
       } catch {
-        // keep optimistic numbers on failure
+        return;
       }
     },
     [current],
@@ -118,10 +132,11 @@ export default function Arcade() {
     (decision: "yes" | "no") => {
       if (!current) return;
       if (decision === "yes") {
-        track("swipe_yes", { ideaId: current.id });
+        emitIdeaEvent("said_yes", current);
+        emitIdeaEvent("checkout_opened", current);
         setPhase("checkout");
       } else {
-        track("swipe_no", { ideaId: current.id });
+        emitIdeaEvent("said_no", current);
         finalizeVote(false, false, "passed");
       }
     },
@@ -134,7 +149,6 @@ export default function Arcade() {
     setIndex((i) => i + 1);
   }, []);
 
-  // Keyboard support (accessibility): ← pass, → pay, Enter advances on reveal.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (showSubmit || showPicks || showAccount) return;
@@ -210,11 +224,11 @@ export default function Arcade() {
                     key="checkout"
                     idea={current}
                     onConfirm={() => {
-                      track("checkout_confirm", { ideaId: current.id });
+                      emitIdeaEvent("paid", current);
                       finalizeVote(true, true, "paid");
                     }}
                     onBail={() => {
-                      track("checkout_bail", { ideaId: current.id });
+                      emitIdeaEvent("checkout_abandoned", current);
                       finalizeVote(true, false, "bailed");
                     }}
                   />
@@ -288,7 +302,11 @@ export default function Arcade() {
           <SubmitModal
             key="submit"
             onClose={() => setShowSubmit(false)}
-            onCreated={() => {
+            onCreated={(idea) => {
+              track("idea_submitted", {
+                idea_id: idea.id,
+                session_id: getSessionId(),
+              });
               setShowSubmit(false);
               loadIdeas();
             }}

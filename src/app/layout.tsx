@@ -14,8 +14,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Characterful editorial serif for display — the main personality driver, and a
-// deliberate break from the Inter/Geist-everywhere "AI default" look.
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
@@ -42,9 +40,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // When you get your Novus snippet, drop its src/init here. The <Script> slot
-  // below keeps it out of the React tree and loads it after the page is interactive.
-  const novusSnippet = process.env.NEXT_PUBLIC_NOVUS_SNIPPET_URL;
+  const novusProjectId = process.env.NEXT_PUBLIC_NOVUS_PROJECT_ID;
 
   return (
     <html
@@ -53,8 +49,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
-        {novusSnippet ? (
-          <Script src={novusSnippet} strategy="afterInteractive" />
+        {novusProjectId ? (
+          <Script id="novus-agent" strategy="afterInteractive">
+            {`(function(apiKey){(function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];v=['initialize','identify','updateOptions','pageLoad','track'];for(w=0,x=v.length;w<x;++w)(function(m){o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo.io/agent/static/'+apiKey+'/pendo.js';z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');var sid;try{sid=window.localStorage.getItem('vaporware_session');}catch(err){}window.pendo.initialize({visitor:{id:sid||('anon-'+Date.now())},account:{id:'vaporware'}});})('${novusProjectId}');`}
+          </Script>
         ) : null}
       </body>
     </html>

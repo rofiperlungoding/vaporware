@@ -122,12 +122,15 @@ This gives the playful arcade a serious, credible spine.
 - **Framework:** Next.js 16 (App Router) + React 19
 - **Styling:** Tailwind CSS v4, custom editorial theme
 - **Animation:** Motion (framer-motion successor)
-- **Persistence:** local JSON files via API route handlers (`src/lib/store.ts`)
+- **Persistence:** **Supabase (Postgres)** — `ideas` + `votes` tables, RLS
+  enabled, accessed only via a server-only secret key in `src/lib/store.ts`
 - **Repo:** `github.com/rofiperlungoding/vaporware` (currently private)
 
-**Designed for an easy backend swap.** All data access is isolated:
-- `src/lib/store.ts` — server-side data layer (swap bodies for a hosted DB)
-- `src/lib/profile.ts` — client profile/picks/account (swap for real auth)
+**All data access is isolated:**
+- `src/lib/store.ts` — server-side data layer (Supabase; same signatures as the
+  old JSON version, swapped without touching any component)
+- `src/lib/supabase.ts` — lazy, server-only Supabase client
+- `src/lib/profile.ts` — client profile/picks/account (local; swap for real auth)
 - `src/lib/track.ts` — analytics shim (Novus events plug in here, one place)
 
 ```
@@ -156,11 +159,12 @@ this intellectual honesty is itself a point in our favour with product judges.
 ## 8. Current status
 
 - ✅ Working end-to-end **locally** (`npm run dev`)
+- ✅ **Supabase (Postgres) live** — schema migrated + 40 ideas seeded; reads and
+  writes verified end-to-end (swipe + checkout persist real rows)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
-- ⛔ **Not yet deployed** to a public URL
+- ⛔ **Not yet deployed** to a public URL (now unblocked — data is in Postgres)
 - ⛔ **Novus.ai not yet installed** (mandatory for eligibility)
 - ⛔ No demo video / written submission yet
-- Backend (Supabase) intentionally deferred — still on local JSON
 
 ---
 
@@ -169,16 +173,15 @@ this intellectual honesty is itself a point in our favour with product judges.
 | # | Task | Needs | Blocker? |
 |---|---|---|---|
 | 1 | Install **Novus.ai** snippet | Novus account + snippet | **Eligibility** |
-| 2 | Move persistence to **Supabase** (or keep JSON if deploying single-instance) | Supabase project | Shippedness |
+| 2 | ~~Move persistence to **Supabase**~~ | — | ✅ Done |
 | 3 | **Deploy** to a public URL (Netlify/Vercel) | hosting account | **Required** |
 | 4 | Record **2–3 min demo video** | — | Required |
 | 5 | Write submission description | — | Required |
 | 6 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
 | 7 | (Optional) designed OG share image | — | Polish |
 
-> Note on persistence + deploy: local JSON file writes won't persist on most
-> serverless hosts. Either deploy somewhere with a writable disk, or move to a
-> hosted DB before/at deploy. Worth a decision.
+> Persistence is now on Supabase (Postgres), so the old local-JSON read-only-FS
+> problem is gone — deploying to a serverless host (Netlify/Vercel) is unblocked.
 
 ---
 
@@ -190,8 +193,9 @@ this intellectual honesty is itself a point in our favour with product judges.
   considered copy, works end-to-end. Risk: needs final polish + must be live.
 - **Originality & Ambition (25%)** — *Strong.* The say-do gap twist is
   differentiated from the saturated "roast/validate" tools.
-- **Shippedness (25%)** — *Currently the weakest.* Not deployed, Novus not
-  installed. This is the gap to close, and it's gated on external accounts.
+- **Shippedness (25%)** — *Improving.* Backend is live on Supabase with real
+  persistence verified end-to-end. Remaining gap: deploy to a public URL +
+  install Novus — both gated on external accounts, both now unblocked.
 
 ---
 

@@ -124,7 +124,7 @@ This gives the playful arcade a serious, credible spine.
 - **Animation:** Motion (framer-motion successor)
 - **Persistence:** **Supabase (Postgres)** — `ideas` + `votes` tables, RLS
   enabled, accessed only via a server-only secret key in `src/lib/store.ts`
-- **Repo:** `github.com/rofiperlungoding/vaporware` (currently private)
+- **Repo:** `github.com/rofiperlungoding/vaporware` (public)
 
 **All data access is isolated:**
 - `src/lib/store.ts` — server-side data layer (Supabase; same signatures as the
@@ -232,8 +232,7 @@ this intellectual honesty is itself a point in our favour with product judges.
 5. **Data/privacy:** When the backend lands we'll store emails (account) and
    behavioral votes. What's the minimum we should do for consent/GDPR now so we
    don't paint ourselves into a corner?
-6. **Repo visibility:** Go public now for the build-in-public bonus, or stay
-   private until after judging?
+6. **Repo visibility:** Now **public** (build-in-public bonus). Resolved.
 7. **Scope tradeoff with ~2 weeks left:** Where should the remaining effort go —
    deploy + Novus + polish (safe), or one more standout feature (risk)?
 

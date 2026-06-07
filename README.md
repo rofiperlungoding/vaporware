@@ -43,7 +43,17 @@ teach product teams: don't trust what users say, measure what they do.
 - **Grounded AI (Mistral)** — an AI roast on your Receipt that names the specific
   ideas you said yes to but bailed on, plus an AI "painted-door read" on ideas
   you submit. Honestly labeled, degrades to static text if AI is off.
+- **Themed decks** — "All" or "AI Startups 2026" (id-prefixed seed ideas, single
+  source theme map in `themes.ts`); choice persists locally
+- **Scoreboard insights** — a live behavioral ticker, say-do **by category**, and
+  an AI **Editor's Note** (deterministic static fallback)
+- **Trust layer** — painted-door disclosure, consent before email capture, and a
+  "clear my data" control
+- **Painted-door share link** — submit an idea, get an unguessable link that
+  collects that idea's *own* say-do data ("early · low sample")
 - Submit your own idea into the arena
+- Every new surface is **feature-flagged** and degrades to a clean static fallback
+- Provenance is always labeled: `demo data` / `live` / `🤖 AI read`
 - Accessible: keyboard support + reduced-motion handling
 
 ## Tech
@@ -85,6 +95,19 @@ Set `NEXT_PUBLIC_NOVUS_PROJECT_ID` (public client key) to enable the agent; if
 unset, tracking no-ops safely. Set `MISTRAL_API_KEY` (server-only) to enable the
 AI surfaces; if unset, they fall back to static text.
 
+### Campaign events
+
+`deck_theme_selected`, `crowd_segment_viewed`, `crowd_note_shown {grounded}`,
+`live_pulse_viewed {transport}`, `trust_disclosure_shown`, `trust_consent_given`,
+`ai_verdict_shown {tier,grounded}`, `ai_read_requested`, `ai_read_shown {grounded}`,
+`painted_door_link_created`, `painted_door_vote {token_hash}`.
+
+### Feature flags (`FEATURES` in `config.ts`)
+
+Client-safe booleans, override via `NEXT_PUBLIC_FEATURE_*`: `THEMED_DECKS`,
+`SEGMENTED_GAP`, `LIVE_TICKER`, `TRUST_LAYER`, `PAINTED_DOOR_LINK` — all default
+ON. Flip any to `false` to cleanly remove that surface.
+
 ## Setup
 
 The hosted Supabase project is already provisioned, migrated, and seeded. To run
@@ -120,10 +143,13 @@ Only needed for a fresh Supabase project (the existing one is already set up):
 
 - `ideas` — id, copy, price, `source` (`seed`/`user`), baseline counts
   (`base_said_yes` / `base_said_no` / `base_did_click`), `is_seed`, `created_at`
+  (54 seeded: classic + 14 `seed-ai2026-*`)
 - `votes` — `idea_id` (fk), `said_yes`, `did_pay` (null if bailed/never reached),
   `session_id`, `created_at`
+- `painted_doors` — `token` (pk), `idea_id` (fk), `session_id`, `created_at` —
+  maps a share link to one idea
 - say-rate / do-rate are computed by combining each idea's baseline with live
-  vote rows. Both tables have RLS enabled; only the server's secret key (which
+  vote rows. All tables have RLS enabled; only the server's secret key (which
   bypasses RLS) accesses them.
 
 ## Project structure
@@ -131,33 +157,23 @@ Only needed for a fresh Supabase project (the existing one is already set up):
 ```
 src/
   app/
-    page.tsx              # arcade (home)
-    leaderboard/          # the scoreboard
-    api/ideas/route.ts    # list + create ideas
-    api/vote/route.ts     # record a swipe / checkout decision
-    api/receipt-image/route.tsx      # shareable OG receipt (next/og)
-    api/verdict-narration/route.ts   # grounded AI roast (Mistral)
-    api/painted-door-read/route.ts   # AI say-do prediction (Mistral)
-  components/             # SwipeCard, CheckoutModal, Reveal, SubmitModal,
-                          # MyPicksModal, AccountModal, SignupNudge, Leaderboard,
-                          # Receipt (end-of-deck), PendoInit (Novus visitor init)
-  lib/
-    ideas.ts              # seeded ideas (realistic baselines)
-    store.ts              # persistence layer (Supabase)
-    supabase.ts           # server-only Supabase client (lazy)
-    profile.ts            # client picks + local account
-    verdict.ts            # scorecard selector + static verdict tiers (AI fallback)
-    ai-context.ts         # builds the grounding payload for the AI
-    mistral.ts            # server-only Mistral client (hardened)
-    ai-guards.ts          # throttle + cache + sanitize (server-only)
-    moments.ts            # once-per-session "caught you" flag
-    config.ts             # brand name, copy, thresholds
-    track.ts              # analytics adapter (single Novus integration point)
-    share.ts              # share helper (Web Share + clipboard)
-    session.ts            # anonymous session id
-  global.d.ts             # pendo global type
-supabase/
-  migrations/0001_init.sql
-scripts/
-  seed.ts                 # idempotent seed (npm run db:seed)
+    page.tsx                         # arcade (home)
+    leaderboard/                     # scoreboard (ticker + segmented gap)
+    d/[token]/                       # public painted-door share page
+    api/ideas · api/vote
+    api/receipt-image                # shareable OG receipt (next/og)
+    api/verdict-narration            # grounded AI roast (Mistral)
+    api/painted-door-read            # AI say-do prediction (Mistral)
+    api/crowd-stats · api/crowd-note # segmented gap + AI Editor's Note
+    api/live-pulse                   # live behavioral ticker source
+    api/painted-door/create          # mint a share token
+  components/   SwipeCard, CheckoutModal, Reveal, SubmitModal, MyPicksModal,
+                AccountModal, SignupNudge, LeaderboardClient, Receipt, PendoInit,
+                ProvenanceTag, LiveTicker, TrustDisclosure, PaintedDoorClient
+  lib/          ideas, store, supabase, profile, verdict, ai-context, mistral,
+                ai-guards, moments, aggregates, themes, deck-pref, trust,
+                painted-door, safe-fetch, config, track, share, session
+  global.d.ts   pendo global type
+supabase/       migrations/0001_init.sql, migrations/0002_painted_doors.sql
+scripts/        seed.ts (npm run db:seed)
 ```

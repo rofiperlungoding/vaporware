@@ -114,8 +114,17 @@ This gives the playful arcade a serious, credible spine.
 - **Grounded AI (Mistral)** — a verdict roast that names the specific ideas you
   said yes to but bailed on, and a "painted-door read" on submitted ideas; both
   honestly labeled and degrade to static text if AI is off
+- **Themed decks** — "All" / "AI Startups 2026" (14 on-theme vapor ideas, code-level
+  theme map, no schema change)
+- **Scoreboard insights** — live behavioral ticker, say-do **by category**, and an
+  AI **Editor's Note** (deterministic static fallback)
+- **Trust layer** — painted-door disclosure, consent before email capture, clear-my-data
+- **Painted-door share link** — submit an idea, get an unguessable link that
+  collects that idea's own real say-do data
+- Every new surface is **feature-flagged** (`FEATURES` in `config.ts`) and degrades
+  to static; provenance always labeled (`demo data` / `live` / `🤖 AI read`)
 - OpenGraph/Twitter metadata for clean link previews
-- 40 seeded ideas with realistic baselines (see §7)
+- 54 seeded ideas with realistic baselines (see §7)
 - An editorial / "receipt" visual identity (warm paper, serif display, hard
   offset shadows, stamp motifs) — a deliberate move away from generic
   "AI-generated" UI
@@ -127,9 +136,12 @@ This gives the playful arcade a serious, credible spine.
 - **Framework:** Next.js 16 (App Router) + React 19
 - **Styling:** Tailwind CSS v4, custom editorial theme
 - **Animation:** Motion (framer-motion successor)
-- **Persistence:** **Supabase (Postgres)** — `ideas` + `votes` tables, RLS
-  enabled, accessed only via a server-only secret key in `src/lib/store.ts`
+- **Persistence:** **Supabase (Postgres)** — `ideas`, `votes`, `painted_doors`
+  tables, RLS enabled, accessed only via a server-only secret key
 - **Repo:** `github.com/rofiperlungoding/vaporware` (public)
+- **Feature flags:** `FEATURES` in `config.ts` (themedDecks, segmentedGap,
+  liveTicker, trustLayer, paintedDoorLink) — every campaign surface is toggleable
+  and degrades to static
 
 **All data access is isolated:**
 - `src/lib/store.ts` — server-side data layer (Supabase; same signatures as the
@@ -142,14 +154,17 @@ This gives the playful arcade a serious, credible spine.
 
 ```
 src/
-  app/            page (arcade), /leaderboard, layout (Pendo loader),
-                  api/{ideas,vote,receipt-image,verdict-narration,painted-door-read}
+  app/            page (arcade), /leaderboard, /d/[token] (share page), layout,
+                  api/{ideas,vote,receipt-image,verdict-narration,painted-door-read,
+                       crowd-stats,crowd-note,live-pulse,painted-door/create}
   components/     SwipeCard, CheckoutModal, Reveal, SubmitModal, MyPicksModal,
-                  AccountModal, SignupNudge, LeaderboardClient, Receipt, PendoInit
+                  AccountModal, SignupNudge, LeaderboardClient, Receipt, PendoInit,
+                  ProvenanceTag, LiveTicker, TrustDisclosure, PaintedDoorClient
   lib/            ideas, store, supabase, profile, verdict, ai-context, mistral,
-                  ai-guards, moments, config, track, share, session
+                  ai-guards, aggregates, themes, deck-pref, trust, painted-door,
+                  safe-fetch, moments, config, track, share, session
   global.d.ts     pendo global type
-supabase/         migrations/0001_init.sql
+supabase/         migrations/0001_init.sql, 0002_painted_doors.sql
 scripts/          seed.ts (npm run db:seed)
 ```
 
@@ -180,6 +195,9 @@ this intellectual honesty is itself a point in our favour with product judges.
 - ✅ **Grounded AI (Mistral) live** — verdict narrator + painted-door read,
   fed only the player's real session data, verified end-to-end with a real key;
   falls back to static text if the key is removed
+- ✅ **"Battle station" depth shipped** — themed AI-2026 deck, scoreboard live
+  ticker + segmented say-do + AI Editor's Note, trust/consent layer, and the
+  painted-door share link; all feature-flagged and verified, schema additive only
 - ✅ Working end-to-end **locally** (`npm run dev`)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
 - ⛔ Confirm events landing in the Novus dashboard, then screenshot for submission
@@ -225,6 +243,12 @@ and degrading to static text on any failure:
 
 New Novus events: `ai_verdict_shown {tier, grounded}`, `ai_read_requested`,
 `ai_read_shown {grounded}` (`grounded:false` = static fallback was used).
+
+### Campaign events (the "battle stations")
+`deck_theme_selected {theme}` (A) · `crowd_segment_viewed` + `crowd_note_shown {grounded}` (B)
+· `live_pulse_viewed {transport}` (C) · `trust_disclosure_shown` + `trust_consent_given` (D)
+· `painted_door_link_created` + `painted_door_vote {token_hash}` (E). All via `track.ts`,
+all flag-gated, existing taxonomy untouched.
 
 ---
 

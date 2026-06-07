@@ -1,35 +1,51 @@
-// Local persistence layer. Reads/writes JSON files under .data/.
-// This is the ONLY module that knows where data lives — swap the bodies of these
-// functions for Supabase calls later and nothing else has to change.
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { SEED_IDEAS } from "./ideas";
+import { getSupabaseAdmin } from "./supabase";
 import type { Idea, IdeaStats, IdeaWithStats, VoteRecord } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-const VOTES_FILE = path.join(DATA_DIR, "votes.json");
-const USER_IDEAS_FILE = path.join(DATA_DIR, "user-ideas.json");
+type IdeaRow = {
+  id: string;
+  one_liner: string;
+  tagline: string;
+  category: string;
+  price: string;
+  source: "seed" | "user";
+  base_said_yes: number;
+  base_said_no: number;
+  base_did_click: number;
+};
 
-async function readJson<T>(file: string, fallback: T): Promise<T> {
-  try {
-    const raw = await fs.readFile(file, "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+type VoteRow = {
+  idea_id: string;
+  said_yes: boolean;
+  did_pay: boolean | null;
+  session_id: string | null;
+  created_at: string;
+};
+
+const IDEA_COLUMNS =
+  "id, one_liner, tagline, category, price, source, base_said_yes, base_said_no, base_did_click";
+
+function toIdea(row: IdeaRow): Idea {
+  return {
+    id: row.id,
+    oneLiner: row.one_liner,
+    tagline: row.tagline,
+    category: row.category,
+    price: row.price,
+    source: row.source,
+    baseSaidYes: row.base_said_yes,
+    baseSaidNo: row.base_said_no,
+    baseDidClick: row.base_did_click,
+  };
 }
 
-async function writeJson(file: string, data: unknown): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(file, JSON.stringify(data, null, 2), "utf8");
-}
-
-async function getUserIdeas(): Promise<Idea[]> {
-  return readJson<Idea[]>(USER_IDEAS_FILE, []);
-}
-
-async function getVotes(): Promise<VoteRecord[]> {
-  return readJson<VoteRecord[]>(VOTES_FILE, []);
+function toVoteRecord(row: VoteRow): VoteRecord {
+  return {
+    ideaId: row.idea_id,
+    sessionId: row.session_id ?? "",
+    saidYes: row.said_yes,
+    didClick: row.did_pay === true,
+    ts: new Date(row.created_at).getTime(),
+  };
 }
 
 function computeStats(idea: Idea, votes: VoteRecord[]): IdeaStats {
@@ -55,17 +71,51 @@ function computeStats(idea: Idea, votes: VoteRecord[]): IdeaStats {
 }
 
 export async function getIdeasWithStats(): Promise<IdeaWithStats[]> {
-  const [userIdeas, votes] = await Promise.all([getUserIdeas(), getVotes()]);
-  const all = [...SEED_IDEAS, ...userIdeas];
-  return all.map((idea) => ({ ...idea, stats: computeStats(idea, votes) }));
+  const supabase = getSupabaseAdmin();
+
+  const [ideasResult, votesResult] = await Promise.all([
+    supabase
+      .from("ideas")
+      .select(IDEA_COLUMNS)
+      .order("is_seed", { ascending: false })
+      .order("created_at", { ascending: true }),
+    supabase.from("votes").select("idea_id, said_yes, did_pay, session_id, created_at"),
+  ]);
+
+  if (ideasResult.error) throw ideasResult.error;
+  if (votesResult.error) throw votesResult.error;
+
+  const votes = (votesResult.data as VoteRow[]).map(toVoteRecord);
+
+  return (ideasResult.data as IdeaRow[]).map((row) => {
+    const idea = toIdea(row);
+    return { ...idea, stats: computeStats(idea, votes) };
+  });
 }
 
 export async function getIdeaWithStats(
   ideaId: string,
 ): Promise<IdeaWithStats | null> {
-  const [userIdeas, votes] = await Promise.all([getUserIdeas(), getVotes()]);
-  const idea = [...SEED_IDEAS, ...userIdeas].find((i) => i.id === ideaId);
-  if (!idea) return null;
+  const supabase = getSupabaseAdmin();
+
+  const ideaResult = await supabase
+    .from("ideas")
+    .select(IDEA_COLUMNS)
+    .eq("id", ideaId)
+    .maybeSingle();
+
+  if (ideaResult.error) throw ideaResult.error;
+  if (!ideaResult.data) return null;
+
+  const votesResult = await supabase
+    .from("votes")
+    .select("idea_id, said_yes, did_pay, session_id, created_at")
+    .eq("idea_id", ideaId);
+
+  if (votesResult.error) throw votesResult.error;
+
+  const idea = toIdea(ideaResult.data as IdeaRow);
+  const votes = (votesResult.data as VoteRow[]).map(toVoteRecord);
   return { ...idea, stats: computeStats(idea, votes) };
 }
 
@@ -75,15 +125,17 @@ export async function recordVote(input: {
   saidYes: boolean;
   didClick: boolean;
 }): Promise<IdeaWithStats | null> {
-  const votes = await getVotes();
-  votes.push({
-    ideaId: input.ideaId,
-    sessionId: input.sessionId,
-    saidYes: input.saidYes,
-    didClick: input.didClick,
-    ts: Date.now(),
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase.from("votes").insert({
+    idea_id: input.ideaId,
+    said_yes: input.saidYes,
+    did_pay: input.didClick ? true : null,
+    session_id: input.sessionId,
   });
-  await writeJson(VOTES_FILE, votes);
+
+  if (error) return null;
+
   return getIdeaWithStats(input.ideaId);
 }
 
@@ -93,7 +145,8 @@ export async function addUserIdea(input: {
   category: string;
   price: string;
 }): Promise<IdeaWithStats> {
-  const userIdeas = await getUserIdeas();
+  const supabase = getSupabaseAdmin();
+
   const idea: Idea = {
     id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     oneLiner: input.oneLiner.slice(0, 120),
@@ -101,13 +154,25 @@ export async function addUserIdea(input: {
     category: input.category.slice(0, 40) || "Wildcard",
     price: input.price.slice(0, 20) || "$5/mo",
     source: "user",
-    // New ideas start from a clean slate — their gap is earned live.
     baseSaidYes: 0,
     baseSaidNo: 0,
     baseDidClick: 0,
   };
-  userIdeas.push(idea);
-  await writeJson(USER_IDEAS_FILE, userIdeas);
-  const votes = await getVotes();
-  return { ...idea, stats: computeStats(idea, votes) };
+
+  const { error } = await supabase.from("ideas").insert({
+    id: idea.id,
+    one_liner: idea.oneLiner,
+    tagline: idea.tagline,
+    category: idea.category,
+    price: idea.price,
+    source: idea.source,
+    base_said_yes: idea.baseSaidYes,
+    base_said_no: idea.baseSaidNo,
+    base_did_click: idea.baseDidClick,
+    is_seed: false,
+  });
+
+  if (error) throw error;
+
+  return { ...idea, stats: computeStats(idea, []) };
 }

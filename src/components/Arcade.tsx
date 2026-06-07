@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import type { IdeaWithStats } from "@/lib/types";
-import { APP_NAME, APP_TAGLINE, SIGNUP_NUDGE_AFTER } from "@/lib/config";
+import {
+  APP_NAME,
+  APP_TAGLINE,
+  FEATURES,
+  SIGNUP_NUDGE_AFTER,
+} from "@/lib/config";
+import { DECKS, deckMeta, matchesDeck, type DeckKey } from "@/lib/themes";
+import { getDeck as getDeckPref, setDeck as setDeckPref } from "@/lib/deck-pref";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
 import {
@@ -38,6 +45,13 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
+function buildDeck(all: IdeaWithStats[], key: DeckKey): IdeaWithStats[] {
+  const filtered = FEATURES.themedDecks
+    ? all.filter((i) => matchesDeck(i.id, key))
+    : all;
+  return shuffle(filtered);
+}
+
 function emitIdeaEvent(
   event: string,
   idea: { id: string; oneLiner: string },
@@ -50,12 +64,16 @@ function emitIdeaEvent(
 }
 
 export default function Arcade() {
+  const [allIdeas, setAllIdeas] = useState<IdeaWithStats[]>([]);
   const [deck, setDeck] = useState<IdeaWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("swipe");
   const [outcome, setOutcome] = useState<Outcome>("passed");
   const [revealIdea, setRevealIdea] = useState<IdeaWithStats | null>(null);
+
+  const [deckKey, setDeckKey] = useState<DeckKey>("all");
+  const deckKeyRef = useRef<DeckKey>("all");
 
   const [showSubmit, setShowSubmit] = useState(false);
   const [showPicks, setShowPicks] = useState(false);
@@ -69,7 +87,9 @@ export default function Arcade() {
     setLoading(true);
     const res = await fetch("/api/ideas", { cache: "no-store" });
     const data = await res.json();
-    setDeck(shuffle(data.ideas as IdeaWithStats[]));
+    const ideas = data.ideas as IdeaWithStats[];
+    setAllIdeas(ideas);
+    setDeck(buildDeck(ideas, deckKeyRef.current));
     setIndex(0);
     setPhase("swipe");
     setRevealIdea(null);
@@ -77,6 +97,11 @@ export default function Arcade() {
   }, []);
 
   useEffect(() => {
+    if (FEATURES.themedDecks) {
+      const k = getDeckPref();
+      deckKeyRef.current = k;
+      setDeckKey(k);
+    }
     loadIdeas();
     setPicks(getPicks());
     setAccount(getAccount());
@@ -85,6 +110,22 @@ export default function Arcade() {
 
   const current = deck[index];
   const remaining = deck.length - index;
+  const ended = !loading && !current;
+
+  const changeDeck = useCallback(
+    (key: DeckKey) => {
+      if (key === deckKeyRef.current) return;
+      deckKeyRef.current = key;
+      setDeckKey(key);
+      setDeckPref(key);
+      track("deck_theme_selected", { theme: key, session_id: getSessionId() });
+      setDeck(buildDeck(allIdeas, key));
+      setIndex(0);
+      setPhase("swipe");
+      setRevealIdea(null);
+    },
+    [allIdeas],
+  );
 
   useEffect(() => {
     if (current) emitIdeaEvent("idea_viewed", current);
@@ -169,7 +210,8 @@ export default function Arcade() {
   const showNudge =
     !account && !nudgeDismissed && picks.length >= SIGNUP_NUDGE_AFTER;
 
-  const ended = !loading && !current;
+  const showDeckPicker = FEATURES.themedDecks && !loading && !ended;
+  const banner = deckMeta(deckKey).banner;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-6">
@@ -200,16 +242,38 @@ export default function Arcade() {
         </div>
       </header>
 
+      {showDeckPicker ? (
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            {DECKS.map((d) => (
+              <button
+                key={d.key}
+                onClick={() => changeDeck(d.key)}
+                className={`border-2 border-[var(--color-ink)] px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-wider transition-transform hover:-translate-y-0.5 ${
+                  deckKey === d.key
+                    ? "bg-[var(--color-ink)] text-[var(--color-paper)]"
+                    : "bg-[var(--color-card)] text-[var(--color-ink)]"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+          {banner ? (
+            <p className="mt-3 font-display text-sm italic text-[var(--color-ink-soft)]">
+              {banner}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="relative mt-6 flex-1">
         {loading ? (
           <div className="flex h-[430px] items-center justify-center font-mono text-sm text-[var(--color-ink-soft)]">
             shuffling the deck…
           </div>
         ) : ended ? (
-          <Receipt
-            onReplay={loadIdeas}
-            onSubmit={() => setShowSubmit(true)}
-          />
+          <Receipt onReplay={loadIdeas} onSubmit={() => setShowSubmit(true)} />
         ) : (
           <>
             <div className="relative mx-auto h-[430px] w-full">
@@ -248,7 +312,9 @@ export default function Arcade() {
                     idea={revealIdea}
                     outcome={outcome}
                     onNext={next}
-                    onRevealComplete={() => emitIdeaEvent("reveal_completed", revealIdea)}
+                    onRevealComplete={() =>
+                      emitIdeaEvent("reveal_completed", revealIdea)
+                    }
                   />
                 ) : null}
               </AnimatePresence>

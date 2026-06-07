@@ -368,4 +368,130 @@ export const SEED_IDEAS: Idea[] = [
     source: "seed",
     baseSaidYes: 198, baseSaidNo: 143, baseDidClick: 101, // 58% say · 51% do
   },
+  {
+    id: "seed-ai2026-cofounder",
+    oneLiner: "An AI co-founder that owns 50% and never replies on weekends",
+    tagline: "All the equity dilution, none of the awkward calls.",
+    category: "AI",
+    price: "$49/mo",
+    source: "seed",
+    baseSaidYes: 272, baseSaidNo: 128, baseDidClick: 22, // 68% say · 8% do
+  },
+  {
+    id: "seed-ai2026-dating-ghostwriter",
+    oneLiner: "AI that writes your dating-app replies so you never have to be charming",
+    tagline: "Outsource your personality until the first date ruins it.",
+    category: "AI",
+    price: "$9/mo",
+    source: "seed",
+    baseSaidYes: 230, baseSaidNo: 130, baseDidClick: 21, // 64% say · 9% do
+  },
+  {
+    id: "seed-ai2026-standup-gen",
+    oneLiner: "Generates your daily standup so you can skip actually working",
+    tagline: "Five bullet points of plausible progress, every morning.",
+    category: "AI",
+    price: "$6/mo",
+    source: "seed",
+    baseSaidYes: 231, baseSaidNo: 99, baseDidClick: 25, // 70% say · 11% do
+  },
+  {
+    id: "seed-ai2026-prompt-wrapper",
+    oneLiner: "A $200/mo wrapper around a free model with a nicer logo",
+    tagline: "It's an API call in a hoodie, but the landing page slaps.",
+    category: "AI",
+    price: "$200/mo",
+    source: "seed",
+    baseSaidYes: 244, baseSaidNo: 176, baseDidClick: 10, // 58% say · 4% do
+  },
+  {
+    id: "seed-ai2026-agent-swarm",
+    oneLiner: "Deploy 40 AI agents to do the job one intern could",
+    tagline: "Watch them argue in a loop until your credits run out.",
+    category: "AI",
+    price: "$99/mo",
+    source: "seed",
+    baseSaidYes: 186, baseSaidNo: 114, baseDidClick: 22, // 62% say · 12% do
+  },
+  {
+    id: "seed-ai2026-meeting-clone",
+    oneLiner: "An AI avatar that attends your meetings as you",
+    tagline: "Two avatars now run the standup. No humans were present.",
+    category: "AI",
+    price: "$19/mo",
+    source: "seed",
+    baseSaidYes: 231, baseSaidNo: 119, baseDidClick: 16, // 66% say · 7% do
+  },
+  {
+    id: "seed-ai2026-therapy-bot",
+    oneLiner: "AI therapist that bills like a real one but never remembers you",
+    tagline: "Unlimited sessions, zero continuity, surprising confidence.",
+    category: "AI",
+    price: "$29/mo",
+    source: "seed",
+    baseSaidYes: 137, baseSaidNo: 143, baseDidClick: 19, // 49% say · 14% do
+  },
+  {
+    id: "seed-ai2026-resume-spam",
+    oneLiner: "Auto-applies to 900 jobs a day with tailored AI cover letters",
+    tagline: "Flood the market until a human gives up and replies.",
+    category: "Career",
+    price: "$15/mo",
+    source: "seed",
+    baseSaidYes: 156, baseSaidNo: 104, baseDidClick: 16, // 60% say · 10% do
+  },
+  {
+    id: "seed-ai2026-influencer",
+    oneLiner: "A fully synthetic influencer who never ages or asks for pay",
+    tagline: "Brand-safe, soulless, and weirdly popular.",
+    category: "AI",
+    price: "$79/mo",
+    source: "seed",
+    baseSaidYes: 177, baseSaidNo: 133, baseDidClick: 16, // 57% say · 9% do
+  },
+  {
+    id: "seed-ai2026-codegen-saas",
+    oneLiner: "Ships features while you sleep, breaks them while you wake",
+    tagline: "Net-zero progress, maximum commit count.",
+    category: "Dev",
+    price: "$39/mo",
+    source: "seed",
+    baseSaidYes: 241, baseSaidNo: 99, baseDidClick: 31, // 71% say · 13% do
+  },
+  {
+    id: "seed-ai2026-pitch-deck",
+    oneLiner: "Turns a voice memo into a VC-ready deck in 60 seconds",
+    tagline: "Ten slides, three buzzwords, one term sheet (maybe).",
+    category: "AI",
+    price: "$25/mo",
+    source: "seed",
+    baseSaidYes: 183, baseSaidNo: 107, baseDidClick: 29, // 63% say · 16% do
+  },
+  {
+    id: "seed-ai2026-companion",
+    oneLiner: "An AI companion that remembers your birthday better than anyone",
+    tagline: "Subscription intimacy, cancel anytime, mostly.",
+    category: "Consumer",
+    price: "$19/mo",
+    source: "seed",
+    baseSaidYes: 248, baseSaidNo: 122, baseDidClick: 52, // 67% say · 21% do
+  },
+  {
+    id: "seed-ai2026-email-empathy",
+    oneLiner: "Rewrites your curt emails to sound like you actually care",
+    tagline: "Warmth as a service, billed monthly.",
+    category: "Productivity",
+    price: "$5/mo",
+    source: "seed",
+    baseSaidYes: 101, baseSaidNo: 139, baseDidClick: 38, // 42% say · 38% do
+  },
+  {
+    id: "seed-ai2026-receipt-scanner",
+    oneLiner: "AI that files your expenses the second you tap pay",
+    tagline: "The boring one that actually saves you an hour a week.",
+    category: "Fintech",
+    price: "$7/mo",
+    source: "seed",
+    baseSaidYes: 90, baseSaidNo: 140, baseDidClick: 50, // 39% say · 56% do
+  },
 ];

@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import type { IdeaWithStats } from "@/lib/types";
 
 type Outcome = "paid" | "bailed" | "passed";
@@ -31,17 +32,36 @@ export default function Reveal({
   idea,
   outcome,
   onNext,
+  onRevealComplete,
 }: {
   idea: IdeaWithStats;
   outcome: Outcome;
   onNext: () => void;
+  onRevealComplete?: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const { sayRate, doRate } = idea.stats;
   const stamp = stampFor(idea);
+  const [step, setStep] = useState<"say" | "do">(reduceMotion ? "do" : "say");
+  const fired = useRef(false);
+  const cbRef = useRef(onRevealComplete);
+  cbRef.current = onRevealComplete;
+
+  useEffect(() => {
+    if (step === "do") {
+      if (!fired.current) {
+        fired.current = true;
+        cbRef.current?.();
+      }
+      return;
+    }
+    const t = window.setTimeout(() => setStep("do"), 950);
+    return () => window.clearTimeout(t);
+  }, [step]);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       className="absolute inset-0 z-[150] flex flex-col justify-between rounded-xl border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-6 shadow-hard"
@@ -55,26 +75,61 @@ export default function Reveal({
             {idea.oneLiner}
           </h3>
         </div>
-        <motion.span
-          initial={{ scale: 1.6, opacity: 0, rotate: -18 }}
-          animate={{ scale: 1, opacity: 1, rotate: -8 }}
-          transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 14 }}
-          className="stamp shrink-0 text-sm"
-          style={{ color: stamp.color }}
-        >
-          {stamp.label}
-        </motion.span>
+        {step === "do" ? (
+          <motion.span
+            initial={reduceMotion ? false : { scale: 1.7, opacity: 0, rotate: -18 }}
+            animate={{ scale: 1, opacity: 1, rotate: -8 }}
+            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 12 }}
+            className="stamp shrink-0 text-sm"
+            style={{ color: stamp.color }}
+          >
+            {stamp.label}
+          </motion.span>
+        ) : null}
       </div>
 
       <div className="space-y-5 py-2">
-        <Stat label="said “take my money”" value={sayRate} color="var(--color-ink)" delay={0.05} />
-        <Stat label="actually clicked pay" value={doRate} color="var(--color-cash-2)" delay={0.28} />
+        <Stat
+          label="said “take my money”"
+          value={sayRate}
+          color="var(--color-ink)"
+          delay={reduceMotion ? 0 : 0.1}
+        />
+
+        {step === "do" ? (
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: -12, scale: 1.08 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 360, damping: 16 }}
+          >
+            <Stat
+              label="actually clicked pay"
+              value={doRate}
+              color="var(--color-cash-2)"
+              delay={0}
+            />
+          </motion.div>
+        ) : (
+          <p className="font-mono text-xs uppercase tracking-wider text-[var(--color-ink-soft)]">
+            …and then they reached for the wallet
+          </p>
+        )}
       </div>
 
       <div>
-        <p className="mb-4 text-sm leading-relaxed text-[var(--color-ink-soft)]">
-          {verdict(idea, outcome)}
-        </p>
+        {step === "do" ? (
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-4 text-sm leading-relaxed text-[var(--color-ink-soft)]"
+          >
+            {verdict(idea, outcome)}
+          </motion.p>
+        ) : (
+          <p className="mb-4 text-sm leading-relaxed text-[var(--color-ink-soft)]">
+            Everyone&apos;s optimistic on the way in.
+          </p>
+        )}
         <button
           onClick={onNext}
           className="w-full border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)] py-3 font-display text-base font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"

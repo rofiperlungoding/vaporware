@@ -7,7 +7,6 @@ import type { IdeaWithStats } from "@/lib/types";
 import { APP_NAME, APP_TAGLINE, SIGNUP_NUDGE_AFTER } from "@/lib/config";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
-import { shareResult } from "@/lib/share";
 import {
   addPick,
   clearPicks,
@@ -25,6 +24,7 @@ import SubmitModal from "./SubmitModal";
 import MyPicksModal from "./MyPicksModal";
 import AccountModal from "./AccountModal";
 import SignupNudge from "./SignupNudge";
+import Receipt from "./Receipt";
 
 type Phase = "swipe" | "checkout" | "reveal";
 type Outcome = "paid" | "bailed" | "passed";
@@ -169,6 +169,8 @@ export default function Arcade() {
   const showNudge =
     !account && !nudgeDismissed && picks.length >= SIGNUP_NUDGE_AFTER;
 
+  const ended = !loading && !current;
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-6">
       <header className="flex items-end justify-between border-b-2 border-[var(--color-ink)] pb-4">
@@ -199,13 +201,18 @@ export default function Arcade() {
       </header>
 
       <div className="relative mt-6 flex-1">
-        <div className="relative mx-auto h-[430px] w-full">
-          {loading ? (
-            <div className="flex h-full items-center justify-center font-mono text-sm text-[var(--color-ink-soft)]">
-              shuffling the deck…
-            </div>
-          ) : current ? (
-            <>
+        {loading ? (
+          <div className="flex h-[430px] items-center justify-center font-mono text-sm text-[var(--color-ink-soft)]">
+            shuffling the deck…
+          </div>
+        ) : ended ? (
+          <Receipt
+            onReplay={loadIdeas}
+            onSubmit={() => setShowSubmit(true)}
+          />
+        ) : (
+          <>
+            <div className="relative mx-auto h-[430px] w-full">
               {stack
                 .map((idea, i) => (
                   <SwipeCard
@@ -231,6 +238,7 @@ export default function Arcade() {
                       emitIdeaEvent("checkout_abandoned", current);
                       finalizeVote(true, false, "bailed");
                     }}
+                    onCaught={() => emitIdeaEvent("caught_in_act", current)}
                   />
                 ) : null}
 
@@ -240,49 +248,42 @@ export default function Arcade() {
                     idea={revealIdea}
                     outcome={outcome}
                     onNext={next}
+                    onRevealComplete={() => emitIdeaEvent("reveal_completed", revealIdea)}
                   />
                 ) : null}
               </AnimatePresence>
-            </>
-          ) : (
-            <EndScreen
-              picks={picks}
-              onReplay={loadIdeas}
-              onSubmit={() => setShowSubmit(true)}
-            />
-          )}
-        </div>
+            </div>
 
-        {!loading && current && phase === "swipe" ? (
-          <div className="mt-7 flex items-center justify-center gap-5">
-            <button
-              aria-label="Pass on this idea"
-              onClick={() => handleSwipe("no")}
-              className="flex h-14 w-14 items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-card)] font-display text-2xl text-[var(--color-nope)] shadow-hard-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              ✕
-            </button>
-            <button
-              onClick={() => setShowSubmit(true)}
-              className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-soft)] underline-offset-4 hover:text-[var(--color-ink)] hover:underline"
-            >
-              + add idea
-            </button>
-            <button
-              aria-label="I would pay for this"
-              onClick={() => handleSwipe("yes")}
-              className="flex h-14 w-14 items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-cash)] font-display text-2xl text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              $
-            </button>
-          </div>
-        ) : null}
+            {phase === "swipe" ? (
+              <div className="mt-7 flex items-center justify-center gap-5">
+                <button
+                  aria-label="Pass on this idea"
+                  onClick={() => handleSwipe("no")}
+                  className="flex h-14 w-14 items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-card)] font-display text-2xl text-[var(--color-nope)] shadow-hard-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  ✕
+                </button>
+                <button
+                  onClick={() => setShowSubmit(true)}
+                  className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-soft)] underline-offset-4 hover:text-[var(--color-ink)] hover:underline"
+                >
+                  + add idea
+                </button>
+                <button
+                  aria-label="I would pay for this"
+                  onClick={() => handleSwipe("yes")}
+                  className="flex h-14 w-14 items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-cash)] font-display text-2xl text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  $
+                </button>
+              </div>
+            ) : null}
 
-        {!loading && current ? (
-          <p className="mt-5 text-center font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]">
-            {remaining} idea{remaining === 1 ? "" : "s"} left
-          </p>
-        ) : null}
+            <p className="mt-5 text-center font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]">
+              {remaining} idea{remaining === 1 ? "" : "s"} left
+            </p>
+          </>
+        )}
       </div>
 
       <AnimatePresence>
@@ -342,73 +343,6 @@ export default function Arcade() {
           />
         ) : null}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function EndScreen({
-  picks,
-  onReplay,
-  onSubmit,
-}: {
-  picks: Pick[];
-  onReplay: () => void;
-  onSubmit: () => void;
-}) {
-  const [shareLabel, setShareLabel] = useState("Share my verdict");
-
-  const paid = picks.filter((p) => p.decision === "paid").length;
-  const bailed = picks.filter((p) => p.decision === "bailed").length;
-
-  async function onShare() {
-    const text =
-      `I judged ${picks.length} startup ideas on ${APP_NAME}. ` +
-      `I'd actually pay for ${paid}, but I'm all talk on ${bailed}. ` +
-      `What would you really click "pay" for?`;
-    const result = await shareResult(text);
-    track("share_verdict", { result, picks: picks.length });
-    if (result === "copied") setShareLabel("Copied to clipboard ✓");
-    else if (result === "shared") setShareLabel("Thanks for sharing ✓");
-    else setShareLabel("Couldn't share — try again");
-    window.setTimeout(() => setShareLabel("Share my verdict"), 2500);
-  }
-
-  return (
-    <div className="flex h-full flex-col items-center justify-center border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-8 text-center shadow-hard">
-      <p className="font-display text-5xl">♠</p>
-      <h2 className="mt-3 font-display text-2xl font-bold text-[var(--color-ink)]">
-        You judged the whole deck
-      </h2>
-      <p className="mt-2 text-sm text-[var(--color-ink-soft)]">
-        You&apos;d pay for {paid}, but you&apos;re all talk on {bailed}. Now see
-        which ideas everyone loved but nobody would actually pay for.
-      </p>
-      <div className="mt-6 flex w-full flex-col gap-3">
-        <a
-          href="/leaderboard"
-          className="border-2 border-[var(--color-ink)] bg-[var(--color-cash)] py-3 font-display text-sm font-bold text-[var(--color-card)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
-        >
-          See the Hall of Delusion →
-        </a>
-        <button
-          onClick={onShare}
-          className="border-2 border-[var(--color-ink)] bg-[var(--color-gold)] py-3 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
-        >
-          {shareLabel}
-        </button>
-        <button
-          onClick={onSubmit}
-          className="border-2 border-[var(--color-ink)] bg-[var(--color-paper-2)] py-3 font-display text-sm font-bold text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
-        >
-          + Add your own idea
-        </button>
-        <button
-          onClick={onReplay}
-          className="font-mono text-xs text-[var(--color-ink-soft)] underline-offset-4 hover:underline"
-        >
-          reshuffle and go again
-        </button>
-      </div>
     </div>
   );
 }

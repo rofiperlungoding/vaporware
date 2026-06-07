@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local prototype data (swap for Supabase later)
 /.data
+
+# Local Netlify folder
+.netlify

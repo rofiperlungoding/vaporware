@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import type { IdeaWithStats } from "@/lib/types";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
+import { FEATURES } from "@/lib/config";
 
 type ReadState = "loading" | "ready" | "off";
 type DoorRead = { predictedPattern: string; trap: string; oneLiner: string };
@@ -30,6 +31,37 @@ export default function SubmitModal({
   const [createdIdea, setCreatedIdea] = useState<IdeaWithStats | null>(null);
   const [readState, setReadState] = useState<ReadState>("loading");
   const [read, setRead] = useState<DoorRead | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [linkLabel, setLinkLabel] = useState("Copy share link");
+
+  async function createLink(ideaId: string) {
+    if (!FEATURES.paintedDoorLink) return;
+    try {
+      const res = await fetch("/api/painted-door/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaId, sessionId: getSessionId() }),
+      });
+      const data = await res.json();
+      if (data?.ok && data.token) {
+        setShareUrl(`${window.location.origin}/d/${data.token}`);
+        track("painted_door_link_created", { session_id: getSessionId() });
+      }
+    } catch {
+      return;
+    }
+  }
+
+  async function copyLink() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setLinkLabel("Copied ✓");
+    } catch {
+      setLinkLabel("Copy failed");
+    }
+    window.setTimeout(() => setLinkLabel("Copy share link"), 2500);
+  }
 
   async function fetchRead(title: string, description: string) {
     track("ai_read_requested", { session_id: getSessionId() });
@@ -81,6 +113,7 @@ export default function SubmitModal({
       setPhase("read");
       setReadState("loading");
       fetchRead(oneLiner.trim(), tagline.trim());
+      createLink(idea.id);
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -224,6 +257,25 @@ export default function SubmitModal({
               <p className="text-[13px] leading-relaxed text-[var(--color-ink-soft)]">
                 {STATIC_READ}
               </p>
+            ) : null}
+
+            {shareUrl ? (
+              <div className="mt-5 border-t border-dashed border-[var(--color-ink)]/40 pt-4">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-ink-soft)]">
+                  Collect real say-do data on your idea
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <code className="min-w-0 flex-1 truncate border-2 border-[var(--color-ink)] bg-[var(--color-paper)] px-2 py-1.5 font-mono text-[11px] text-[var(--color-ink)]">
+                    {shareUrl}
+                  </code>
+                  <button
+                    onClick={copyLink}
+                    className="shrink-0 border-2 border-[var(--color-ink)] bg-[var(--color-gold)] px-3 py-1.5 font-mono text-[11px] font-bold uppercase text-[var(--color-ink)] shadow-hard-sm"
+                  >
+                    {linkLabel}
+                  </button>
+                </div>
+              </div>
             ) : null}
 
             <button

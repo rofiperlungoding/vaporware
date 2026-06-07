@@ -20,7 +20,7 @@ export const FEATURES = {
   segmentedGap: flag(process.env.NEXT_PUBLIC_FEATURE_SEGMENTED_GAP, true),
   liveTicker: flag(process.env.NEXT_PUBLIC_FEATURE_LIVE_TICKER, true),
   trustLayer: flag(process.env.NEXT_PUBLIC_FEATURE_TRUST_LAYER, true),
-  paintedDoorLink: flag(process.env.NEXT_PUBLIC_FEATURE_PAINTED_DOOR_LINK, false),
+  paintedDoorLink: flag(process.env.NEXT_PUBLIC_FEATURE_PAINTED_DOOR_LINK, true),
 } as const;
 
 export type FeatureName = keyof typeof FEATURES;

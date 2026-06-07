@@ -50,6 +50,20 @@ teach product teams: don't trust what users say, measure what they do.
 - **Supabase (Postgres)** for ideas + votes — all access isolated in
   `src/lib/store.ts`; the browser never talks to Supabase directly
 - **Deployed on Netlify** (auto-deploys from GitHub); config in `netlify.toml`
+- **Novus.ai (Pendo)** behavioral analytics — loaded once in `layout.tsx`, all
+  events funnel through `src/lib/track.ts`
+
+## Analytics (the say-do gap, measurable)
+
+Events fire through the single `src/lib/track.ts` adapter:
+`idea_viewed`, `said_yes`, `said_no`, `checkout_opened`, `paid`,
+`checkout_abandoned`, `idea_submitted`.
+
+- **say-rate** = `said_yes / idea_viewed`
+- **do-rate** = `paid / checkout_opened`
+
+Set `NEXT_PUBLIC_NOVUS_PROJECT_ID` (public client key) to enable the agent; if
+unset, tracking no-ops safely.
 
 ## Setup
 
@@ -102,16 +116,18 @@ src/
     api/ideas/route.ts    # list + create ideas
     api/vote/route.ts     # record a swipe / checkout decision
   components/             # SwipeCard, CheckoutModal, Reveal, SubmitModal,
-                          # MyPicksModal, AccountModal, SignupNudge, Leaderboard
+                          # MyPicksModal, AccountModal, SignupNudge, Leaderboard,
+                          # PendoInit (Novus visitor init)
   lib/
     ideas.ts              # seeded ideas (realistic baselines)
     store.ts              # persistence layer (Supabase)
     supabase.ts           # server-only Supabase client (lazy)
     profile.ts            # client picks + local account
     config.ts             # brand name, copy, thresholds
-    track.ts              # analytics shim (Novus hooks plug in here)
+    track.ts              # analytics adapter (single Novus integration point)
     share.ts              # share helper (Web Share + clipboard)
     session.ts            # anonymous session id
+  global.d.ts             # pendo global type
 supabase/
   migrations/0001_init.sql
 scripts/

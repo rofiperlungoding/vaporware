@@ -162,9 +162,12 @@ this intellectual honesty is itself a point in our favour with product judges.
   from GitHub on every push)
 - ✅ **Supabase (Postgres) live** — schema migrated + 40 ideas seeded; reads and
   writes verified end-to-end on the deployed site (swipe + checkout persist real rows)
+- ✅ **Novus.ai (Pendo) installed** — agent loads + initializes an anonymous
+  visitor (session id), and behavioral events fire through the single
+  `src/lib/track.ts` shim
 - ✅ Working end-to-end **locally** (`npm run dev`)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
-- ⛔ **Novus.ai not yet installed** (mandatory for eligibility — the one hard blocker left)
+- ⛔ Confirm events landing in the Novus dashboard, then screenshot for submission
 - ⛔ No demo video / written submission yet
 - ⚠️ Supabase key was shared in plaintext during setup — rotate before going public
 
@@ -174,17 +177,28 @@ this intellectual honesty is itself a point in our favour with product judges.
 
 | # | Task | Needs | Blocker? |
 |---|---|---|---|
-| 1 | Install **Novus.ai** snippet | Novus account + snippet | **Eligibility** |
+| 1 | ~~Install **Novus.ai** snippet~~ | — | ✅ Done |
 | 2 | ~~Move persistence to **Supabase**~~ | — | ✅ Done |
 | 3 | ~~**Deploy** to a public URL~~ | — | ✅ Done (Netlify) |
-| 4 | Rotate the Supabase key shared in chat | — | Before public |
-| 5 | Record **2–3 min demo video** | — | Required |
-| 6 | Write submission description | — | Required |
-| 7 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
-| 8 | (Optional) designed OG share image | — | Polish |
+| 4 | Verify events in Novus dashboard + screenshot | live deploy | Submission proof |
+| 5 | Rotate the Supabase key shared in chat | — | Before public |
+| 6 | Record **2–3 min demo video** | — | Required |
+| 7 | Write submission description | — | Required |
+| 8 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
+| 9 | (Optional) designed OG share image | — | Polish |
 
-> Deployed on Netlify with Supabase persistence — the static URL is live and
-> auto-redeploys from GitHub. **Novus is now the only hard eligibility item left.**
+> All hard eligibility items are met: live public URL, Supabase persistence, and
+> Novus installed with measurable say-do events. Remaining work is the demo video
+> and written submission.
+
+### Novus event taxonomy (the say-do gap, measurable)
+`idea_viewed`, `said_yes`, `said_no`, `checkout_opened`, `paid`,
+`checkout_abandoned`, `idea_submitted` — all fired through `src/lib/track.ts`.
+**say-rate = said_yes / idea_viewed · do-rate = paid / checkout_opened.**
+
+> Note: Novus also auto-generated two PRs. PR #1 (the Pendo loader + visitor
+> init) was merged. PR #2 (duplicate track events on the old naming, missing
+> `idea_viewed`/`checkout_opened`) was closed to avoid double-counting.
 
 ---
 
@@ -196,9 +210,9 @@ this intellectual honesty is itself a point in our favour with product judges.
   considered copy, works end-to-end, **live in production**. Risk: final polish.
 - **Originality & Ambition (25%)** — *Strong.* The say-do gap twist is
   differentiated from the saturated "roast/validate" tools.
-- **Shippedness (25%)** — *Strong now.* Deployed and public on Netlify, backed by
-  Supabase, with reads/writes verified live. Remaining: install Novus (so it's
-  measurable per the brief) — the last eligibility item.
+- **Shippedness (25%)** — *Strong.* Deployed and public on Netlify, backed by
+  Supabase, with Novus installed and the say-do gap measurable via real
+  behavioral events. All hard eligibility items met.
 
 ---
 

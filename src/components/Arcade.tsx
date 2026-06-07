@@ -4,13 +4,26 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import type { IdeaWithStats } from "@/lib/types";
-import { APP_NAME, APP_TAGLINE } from "@/lib/config";
+import { APP_NAME, APP_TAGLINE, SIGNUP_NUDGE_AFTER } from "@/lib/config";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
+import {
+  addPick,
+  clearPicks,
+  dismissNudge,
+  getAccount,
+  getPicks,
+  isNudgeDismissed,
+  type Account,
+  type Pick,
+} from "@/lib/profile";
 import SwipeCard from "./SwipeCard";
 import CheckoutModal from "./CheckoutModal";
 import Reveal from "./Reveal";
 import SubmitModal from "./SubmitModal";
+import MyPicksModal from "./MyPicksModal";
+import AccountModal from "./AccountModal";
+import SignupNudge from "./SignupNudge";
 
 type Phase = "swipe" | "checkout" | "reveal";
 type Outcome = "paid" | "bailed" | "passed";
@@ -31,7 +44,14 @@ export default function Arcade() {
   const [phase, setPhase] = useState<Phase>("swipe");
   const [outcome, setOutcome] = useState<Outcome>("passed");
   const [revealIdea, setRevealIdea] = useState<IdeaWithStats | null>(null);
+
   const [showSubmit, setShowSubmit] = useState(false);
+  const [showPicks, setShowPicks] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
+
+  const [picks, setPicks] = useState<Pick[]>([]);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [nudgeDismissed, setNudgeDismissed] = useState(true); // assume true until mounted
 
   const loadIdeas = useCallback(async () => {
     setLoading(true);
@@ -46,6 +66,9 @@ export default function Arcade() {
 
   useEffect(() => {
     loadIdeas();
+    setPicks(getPicks());
+    setAccount(getAccount());
+    setNudgeDismissed(isNudgeDismissed());
   }, [loadIdeas]);
 
   const current = deck[index];
@@ -57,6 +80,19 @@ export default function Arcade() {
       setOutcome(nextOutcome);
       setRevealIdea(current);
       setPhase("reveal");
+
+      // Record the player's own pick locally (their personal index).
+      setPicks(
+        addPick({
+          ideaId: current.id,
+          oneLiner: current.oneLiner,
+          category: current.category,
+          price: current.price,
+          decision: nextOutcome,
+          ts: Date.now(),
+        }),
+      );
+
       try {
         const res = await fetch("/api/vote", {
           method: "POST",
@@ -100,7 +136,7 @@ export default function Arcade() {
   // Keyboard support (accessibility): ← pass, → pay, Enter advances on reveal.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (showSubmit) return;
+      if (showSubmit || showPicks || showAccount) return;
       if (phase === "swipe" && current) {
         if (e.key === "ArrowRight") handleSwipe("yes");
         else if (e.key === "ArrowLeft") handleSwipe("no");
@@ -111,9 +147,12 @@ export default function Arcade() {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, current, showSubmit, handleSwipe, next]);
+  }, [phase, current, showSubmit, showPicks, showAccount, handleSwipe, next]);
 
   const stack = useMemo(() => deck.slice(index, index + 3), [deck, index]);
+
+  const showNudge =
+    !account && !nudgeDismissed && picks.length >= SIGNUP_NUDGE_AFTER;
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 py-6">
@@ -123,16 +162,25 @@ export default function Arcade() {
             {APP_NAME}
             <span className="text-[var(--color-cash)]">.</span>
           </h1>
-          <p className="mt-1 max-w-[15rem] text-xs leading-snug text-[var(--color-ink-soft)]">
+          <p className="mt-1 max-w-[14rem] text-xs leading-snug text-[var(--color-ink-soft)]">
+            {account ? `Hey ${account.name} — ` : ""}
             {APP_TAGLINE}
           </p>
         </div>
-        <Link
-          href="/leaderboard"
-          className="border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
-        >
-          Scores
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <button
+            onClick={() => setShowPicks(true)}
+            className="border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
+          >
+            Picks {picks.length > 0 ? `· ${picks.length}` : ""}
+          </button>
+          <Link
+            href="/leaderboard"
+            className="border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-2.5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[var(--color-ink)] shadow-hard-sm transition-transform hover:-translate-y-0.5"
+          >
+            Scores
+          </Link>
+        </div>
       </header>
 
       <div className="relative mt-6 flex-1">
@@ -219,12 +267,54 @@ export default function Arcade() {
       </div>
 
       <AnimatePresence>
+        {showNudge ? (
+          <SignupNudge
+            key="nudge"
+            pickCount={picks.length}
+            onCreateAccount={() => setShowAccount(true)}
+            onDismiss={() => {
+              dismissNudge();
+              setNudgeDismissed(true);
+            }}
+          />
+        ) : null}
+
         {showSubmit ? (
           <SubmitModal
+            key="submit"
             onClose={() => setShowSubmit(false)}
             onCreated={() => {
               setShowSubmit(false);
               loadIdeas();
+            }}
+          />
+        ) : null}
+
+        {showPicks ? (
+          <MyPicksModal
+            key="picks"
+            picks={picks}
+            account={account}
+            onClose={() => setShowPicks(false)}
+            onCreateAccount={() => {
+              setShowPicks(false);
+              setShowAccount(true);
+            }}
+            onClear={() => {
+              clearPicks();
+              setPicks([]);
+            }}
+          />
+        ) : null}
+
+        {showAccount ? (
+          <AccountModal
+            key="account"
+            pickCount={picks.length}
+            onClose={() => setShowAccount(false)}
+            onCreated={(acc) => {
+              setAccount(acc);
+              setShowAccount(false);
             }}
           />
         ) : null}

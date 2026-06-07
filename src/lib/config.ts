@@ -12,3 +12,6 @@ export const NUMBERS_DISCLOSURE =
 
 // Swipe threshold in pixels before a drag counts as a decision.
 export const SWIPE_THRESHOLD = 110;
+
+// After this many decisions, gently nudge a guest to create an account.
+export const SIGNUP_NUDGE_AFTER = 5;

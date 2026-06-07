@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from "@/lib/config";
+import PendoInit from "@/components/PendoInit";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,20 +42,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // When you get your Novus snippet, drop its src/init here. The <Script> slot
-  // below keeps it out of the React tree and loads it after the page is interactive.
-  const novusSnippet = process.env.NEXT_PUBLIC_NOVUS_SNIPPET_URL;
-
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function(apiKey){
+    (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
+    v=['initialize','identify','updateOptions','pageLoad','track','trackAgent'];for(w=0,x=v.length;w<x;++w)(function(m){
+    o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
+    y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo.io/agent/static/'+apiKey+'/pendo.js';
+    z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
+})('5ae6d8c1-88dc-479f-8fc8-de5504d3e0bb');
+`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
-        {novusSnippet ? (
-          <Script src={novusSnippet} strategy="afterInteractive" />
-        ) : null}
+        <PendoInit />
       </body>
     </html>
   );

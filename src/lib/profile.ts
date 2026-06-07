@@ -72,6 +72,9 @@ export function saveAccount(name: string, email: string): Account {
 export function signOut(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(ACCOUNT_KEY);
+  if (typeof pendo !== "undefined") {
+    pendo.clearSession();
+  }
 }
 
 export function isNudgeDismissed(): boolean {

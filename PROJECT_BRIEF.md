@@ -1,6 +1,6 @@
 # Vaporware — Project Brief
 
-*A briefing document for review/consultation. Last updated: June 7, 2026.*
+*A briefing document for review/consultation. Last updated: June 8, 2026.*
 
 > **One line:** A validation arcade where you swipe the product ideas you'd pay
 > for — then we measure who *actually* clicks "pay". The gap between what people
@@ -29,7 +29,7 @@
 1. **New project**, started on/after May 20, 2026.
 2. Built with any tool (we chose hand-rolled Next.js).
 3. **Novus.ai must be installed before submission** — *projects without Novus
-   are ineligible for prizes.* (Not done yet — see roadmap.)
+   are ineligible for prizes.* (Done — installed and live; see §8.)
 4. A **public, deployed URL** a stranger can use right now.
 5. A **2–3 minute demo video** (YouTube/Vimeo/Loom, public/unlisted).
 6. A **screenshot of the Novus dashboard**.
@@ -131,14 +131,17 @@ This gives the playful arcade a serious, credible spine.
   old JSON version, swapped without touching any component)
 - `src/lib/supabase.ts` — lazy, server-only Supabase client
 - `src/lib/profile.ts` — client profile/picks/account (local; swap for real auth)
-- `src/lib/track.ts` — analytics shim (Novus events plug in here, one place)
+- `src/lib/track.ts` — single Novus/Pendo integration point (installed)
 
 ```
 src/
-  app/            page (arcade), /leaderboard, /api/ideas, /api/vote
-  components/     SwipeCard, CheckoutModal, Reveal, SubmitModal,
-                  MyPicksModal, AccountModal, SignupNudge, LeaderboardClient
-  lib/            ideas (seed), store, profile, config, track, share, session
+  app/            page (arcade), /leaderboard, /api/ideas, /api/vote, layout (Pendo loader)
+  components/     SwipeCard, CheckoutModal, Reveal, SubmitModal, MyPicksModal,
+                  AccountModal, SignupNudge, LeaderboardClient, PendoInit
+  lib/            ideas (seed), store, supabase, profile, config, track, share, session
+  global.d.ts     pendo global type
+supabase/         migrations/0001_init.sql
+scripts/          seed.ts (npm run db:seed)
 ```
 
 ---
@@ -169,7 +172,8 @@ this intellectual honesty is itself a point in our favour with product judges.
 - ✅ Pushed to GitHub (auto-sync on every change-set)
 - ⛔ Confirm events landing in the Novus dashboard, then screenshot for submission
 - ⛔ No demo video / written submission yet
-- ⚠️ Supabase key was shared in plaintext during setup — rotate before going public
+- ⚠️ Site is already public and the Supabase key was shared in plaintext during
+  setup — rotate it now (not committed to the repo, but the exposure window is open)
 
 ---
 

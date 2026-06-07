@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import type { IdeaWithStats } from "@/lib/types";
+import { track } from "@/lib/track";
 
 export default function SubmitModal({
   onClose,
@@ -36,7 +37,15 @@ export default function SubmitModal({
         setError(data.error ?? "Something went wrong.");
         return;
       }
-      onCreated(data.idea as IdeaWithStats);
+      const idea = data.idea as IdeaWithStats;
+      track("idea_submitted", {
+        ideaId: idea.id,
+        category,
+        price,
+        oneLinerLength: oneLiner.trim().length,
+        hasTagline: tagline.trim().length > 0,
+      });
+      onCreated(idea);
     } catch {
       setError("Network error. Try again.");
     } finally {

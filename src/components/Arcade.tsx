@@ -118,10 +118,20 @@ export default function Arcade() {
     (decision: "yes" | "no") => {
       if (!current) return;
       if (decision === "yes") {
-        track("swipe_yes", { ideaId: current.id });
+        track("swipe_yes", {
+          ideaId: current.id,
+          category: current.category,
+          price: current.price,
+          deckPosition: index,
+        });
         setPhase("checkout");
       } else {
-        track("swipe_no", { ideaId: current.id });
+        track("swipe_no", {
+          ideaId: current.id,
+          category: current.category,
+          price: current.price,
+          deckPosition: index,
+        });
         finalizeVote(false, false, "passed");
       }
     },
@@ -210,11 +220,19 @@ export default function Arcade() {
                     key="checkout"
                     idea={current}
                     onConfirm={() => {
-                      track("checkout_confirm", { ideaId: current.id });
+                      track("checkout_confirm", {
+                        ideaId: current.id,
+                        category: current.category,
+                        price: current.price,
+                      });
                       finalizeVote(true, true, "paid");
                     }}
                     onBail={() => {
-                      track("checkout_bail", { ideaId: current.id });
+                      track("checkout_bail", {
+                        ideaId: current.id,
+                        category: current.category,
+                        price: current.price,
+                      });
                       finalizeVote(true, false, "bailed");
                     }}
                   />
@@ -233,6 +251,7 @@ export default function Arcade() {
           ) : (
             <EndScreen
               picks={picks}
+              deck={deck}
               onReplay={loadIdeas}
               onSubmit={() => setShowSubmit(true)}
             />
@@ -306,6 +325,13 @@ export default function Arcade() {
               setShowAccount(true);
             }}
             onClear={() => {
+              track("picks_cleared", {
+                pickCount: picks.length,
+                paidCount: picks.filter((p) => p.decision === "paid").length,
+                bailedCount: picks.filter((p) => p.decision === "bailed").length,
+                passedCount: picks.filter((p) => p.decision === "passed").length,
+                hasAccount: !!account,
+              });
               clearPicks();
               setPicks([]);
             }}
@@ -330,10 +356,12 @@ export default function Arcade() {
 
 function EndScreen({
   picks,
+  deck,
   onReplay,
   onSubmit,
 }: {
   picks: Pick[];
+  deck: IdeaWithStats[];
   onReplay: () => void;
   onSubmit: () => void;
 }) {
@@ -341,6 +369,18 @@ function EndScreen({
 
   const paid = picks.filter((p) => p.decision === "paid").length;
   const bailed = picks.filter((p) => p.decision === "bailed").length;
+  const passed = picks.filter((p) => p.decision === "passed").length;
+
+  useEffect(() => {
+    track("deck_completed", {
+      totalIdeas: deck.length,
+      paidCount: paid,
+      bailedCount: bailed,
+      passedCount: passed,
+    });
+    // Fire once when the EndScreen mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onShare() {
     const text =
@@ -348,7 +388,12 @@ function EndScreen({
       `I'd actually pay for ${paid}, but I'm all talk on ${bailed}. ` +
       `What would you really click "pay" for?`;
     const result = await shareResult(text);
-    track("share_verdict", { result, picks: picks.length });
+    track("share_verdict", {
+      result,
+      picks: picks.length,
+      paidCount: paid,
+      bailedCount: bailed,
+    });
     if (result === "copied") setShareLabel("Copied to clipboard ✓");
     else if (result === "shared") setShareLabel("Thanks for sharing ✓");
     else setShareLabel("Couldn't share — try again");
@@ -385,7 +430,12 @@ function EndScreen({
           + Add your own idea
         </button>
         <button
-          onClick={onReplay}
+          onClick={() => {
+            track("deck_reshuffled", {
+              previousPickCount: picks.length,
+            });
+            onReplay();
+          }}
           className="font-mono text-xs text-[var(--color-ink-soft)] underline-offset-4 hover:underline"
         >
           reshuffle and go again

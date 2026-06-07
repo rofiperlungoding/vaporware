@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { saveAccount, type Account } from "@/lib/profile";
+import { track } from "@/lib/track";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,7 +29,12 @@ export default function AccountModal({
       setError("That email doesn't look right.");
       return;
     }
-    onCreated(saveAccount(name, email));
+    const account = saveAccount(name, email);
+    track("account_created", {
+      pickCount,
+      source: "signup_modal",
+    });
+    onCreated(account);
   }
 
   return (

@@ -1,6 +1,6 @@
 # Vaporware — Project Brief
 
-*A briefing document for review/consultation. Last updated: June 8, 2026.*
+*A briefing document for review/consultation. Last updated: June 9, 2026.*
 
 > **One line:** A validation arcade where you swipe the product ideas you'd pay
 > for — then we measure who *actually* clicks "pay". The gap between what people
@@ -129,6 +129,28 @@ This gives the playful arcade a serious, credible spine.
   offset shadows, stamp motifs) — a deliberate move away from generic
   "AI-generated" UI
 
+### "LOCK & LOAD" hardening pass (post-feature-complete polish)
+
+The product is feature-frozen; the latest pass was hardening/demo-readiness only,
+no new product surfaces:
+- **Demo mode** — a guarded `?demo=1` path (`src/lib/demo.ts`) that resets the
+  *local* session and stages a repeatable playthrough (4 bailed + 1 paid → a
+  guaranteed **"Pure Vapor"** Receipt + caught-you moment), so the demo video
+  lands the gut-punch every take. It only seeds local picks — never fabricates
+  crowd rows — and is not linked anywhere in the public UI.
+- **Resilience** — every live route degrades to a clean static fallback via
+  `safe-fetch.ts` (AbortController timeout + one retry, 5xx skipped); the live
+  ticker pauses on hidden tabs and falls back to a static line after 3 misses.
+- **A11y** — full keyboard focus-trap loops in all four modals (Checkout, Submit,
+  Account, My Picks) via `useFocusTrap.ts`, plus `role="dialog"`/`aria-modal`/
+  aria-labels and Escape-to-close; reduced-motion variants throughout. (The trust
+  disclosure is an inline banner, not an overlay, so it is intentionally not
+  focus-trapped.)
+- **Analytics harness** — a dev-only `console.debug("[vaporware:track]", …)` in
+  `track.ts` makes it trivial to watch every event fire and screenshot Novus.
+- **Submission kit** — `SUBMISSION.md` holds the ~2:30 demo shot-list + VO script,
+  a first-draft written description, and the "why this isn't AI slop" paragraph.
+
 ---
 
 ## 6. Tech & architecture
@@ -162,10 +184,11 @@ src/
                   ProvenanceTag, LiveTicker, TrustDisclosure, PaintedDoorClient
   lib/            ideas, store, supabase, profile, verdict, ai-context, mistral,
                   ai-guards, aggregates, themes, deck-pref, trust, painted-door,
-                  safe-fetch, moments, config, track, share, session
+                  safe-fetch, moments, demo, useFocusTrap, config, track, share, session
   global.d.ts     pendo global type
 supabase/         migrations/0001_init.sql, 0002_painted_doors.sql
 scripts/          seed.ts (npm run db:seed)
+SUBMISSION.md     demo shot-list + VO script + draft written submission
 ```
 
 ---
@@ -198,10 +221,13 @@ this intellectual honesty is itself a point in our favour with product judges.
 - ✅ **"Battle station" depth shipped** — themed AI-2026 deck, scoreboard live
   ticker + segmented say-do + AI Editor's Note, trust/consent layer, and the
   painted-door share link; all feature-flagged and verified, schema additive only
+- ✅ **"LOCK & LOAD" hardening done** — `?demo=1` deterministic demo path, full
+  modal focus-traps, resilient live routes (timeout + static fallback), dev-only
+  analytics debug, and a `SUBMISSION.md` deliverable kit; `next build` green
 - ✅ Working end-to-end **locally** (`npm run dev`)
 - ✅ Pushed to GitHub (auto-sync on every change-set)
 - ⛔ Confirm events landing in the Novus dashboard, then screenshot for submission
-- ⛔ No demo video / written submission yet
+- ⛔ No demo video / written submission yet (script + draft ready in `SUBMISSION.md`)
 - ⚠️ Site is already public; the Supabase key **and** the Mistral key were shared
   in plaintext during setup — rotate both (neither is committed to the repo, but
   the exposure window is open)
@@ -217,8 +243,8 @@ this intellectual honesty is itself a point in our favour with product judges.
 | 3 | ~~**Deploy** to a public URL~~ | — | ✅ Done (Netlify) |
 | 4 | Verify events in Novus dashboard + screenshot | live deploy | Submission proof |
 | 5 | Rotate the Supabase + Mistral keys shared in chat | — | Before wide demo |
-| 6 | Record **2–3 min demo video** | — | Required |
-| 7 | Write submission description | — | Required |
+| 6 | Record **2–3 min demo video** | shot-list + VO ready in `SUBMISSION.md` | Required |
+| 7 | Write submission description | first draft in `SUBMISSION.md` | Required |
 | 8 | (Optional) build-in-public posts (#EveryoneShipsNow) | — | Bonus |
 | 9 | (Optional) designed OG share image | — | Polish |
 

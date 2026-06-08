@@ -7,6 +7,7 @@ import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
 import { FEATURES } from "@/lib/config";
 import { hasConsent, setConsent } from "@/lib/trust";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,6 +24,7 @@ export default function AccountModal({
   const [email, setEmail] = useState("");
   const [agreed, setAgreed] = useState(hasConsent());
   const [error, setError] = useState<string | null>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -78,6 +80,7 @@ export default function AccountModal({
         role="dialog"
         aria-modal="true"
         aria-label="Save your picks"
+        ref={trapRef}
       >
         <h3 className="font-display text-xl font-bold text-[var(--color-ink)]">
           Save your picks

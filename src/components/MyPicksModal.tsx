@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import type { Account, Pick } from "@/lib/profile";
 import { FEATURES } from "@/lib/config";
 import { clearAllData } from "@/lib/trust";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 export default function MyPicksModal({
   picks,
@@ -26,6 +27,8 @@ export default function MyPicksModal({
       passed: picks.filter((p) => p.decision === "passed"),
     };
   }, [picks]);
+
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -53,6 +56,7 @@ export default function MyPicksModal({
         role="dialog"
         aria-modal="true"
         aria-label="Your picks"
+        ref={trapRef}
       >
         <div className="flex items-start justify-between border-b-2 border-[var(--color-ink)] p-5">
           <div>

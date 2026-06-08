@@ -6,6 +6,7 @@ import type { IdeaWithStats } from "@/lib/types";
 import { getSessionId } from "@/lib/session";
 import { track } from "@/lib/track";
 import { FEATURES } from "@/lib/config";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 type ReadState = "loading" | "ready" | "off";
 type DoorRead = { predictedPattern: string; trap: string; oneLiner: string };
@@ -33,6 +34,7 @@ export default function SubmitModal({
   const [read, setRead] = useState<DoorRead | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [linkLabel, setLinkLabel] = useState("Copy share link");
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   async function createLink(ideaId: string) {
     if (!FEATURES.paintedDoorLink) return;
@@ -143,6 +145,7 @@ export default function SubmitModal({
         role="dialog"
         aria-modal="true"
         aria-label="Submit an idea"
+        ref={trapRef}
       >
         {phase === "form" ? (
           <>

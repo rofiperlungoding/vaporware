@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { IdeaWithStats } from "@/lib/types";
 import { hasBeenCaught, markCaught } from "@/lib/moments";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 export default function CheckoutModal({
   idea,
@@ -18,6 +19,7 @@ export default function CheckoutModal({
 }) {
   const reduceMotion = useReducedMotion();
   const [caught, setCaught] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>();
 
   function handleBail() {
     if (!hasBeenCaught()) {
@@ -45,6 +47,7 @@ export default function CheckoutModal({
         role="dialog"
         aria-modal="true"
         aria-label="Demand checkout"
+        ref={trapRef}
       >
         {caught ? (
           <div className="flex flex-col items-center text-center">

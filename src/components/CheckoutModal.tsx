@@ -42,6 +42,9 @@ export default function CheckoutModal({
         exit={{ y: 26, opacity: 0 }}
         transition={{ type: "spring", stiffness: 340, damping: 26 }}
         className="w-full max-w-[20rem] border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-6 shadow-hard"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Demand checkout"
       >
         {caught ? (
           <div className="flex flex-col items-center text-center">

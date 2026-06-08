@@ -15,9 +15,13 @@ type Pulse = {
   seededDoRate: number;
 };
 
+type Mode = "loading" | "ok" | "static";
+
 export default function LiveTicker() {
   const [pulse, setPulse] = useState<Pulse | null>(null);
+  const [mode, setMode] = useState<Mode>("loading");
   const fired = useRef(false);
+  const failures = useRef(0);
 
   useEffect(() => {
     let stopped = false;
@@ -33,14 +37,23 @@ export default function LiveTicker() {
         { cache: "no-store" },
         { timeoutMs: 5000, retries: 1 },
       );
-      if (!stopped && r.ok && r.data.ok !== false) {
+      if (stopped) return;
+      if (r.ok && r.data.ok !== false) {
+        failures.current = 0;
         setPulse(r.data);
+        setMode("ok");
         if (!fired.current) {
           fired.current = true;
           track("live_pulse_viewed", {
             transport: "poll",
             session_id: getSessionId(),
           });
+        }
+      } else {
+        failures.current += 1;
+        if (failures.current >= 3 && !pulse) {
+          setMode("static");
+          return;
         }
       }
       schedule();
@@ -55,9 +68,20 @@ export default function LiveTicker() {
       stopped = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, []);
+  }, [pulse]);
 
-  if (!pulse) {
+  if (mode === "static") {
+    return (
+      <div className="flex items-center justify-between border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-3 py-2 shadow-hard-sm">
+        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]">
+          live demand updates as people vote
+        </span>
+        <ProvenanceTag kind="seeded" />
+      </div>
+    );
+  }
+
+  if (mode === "loading" || !pulse) {
     return (
       <div className="flex items-center justify-between border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-3 py-2 shadow-hard-sm">
         <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]">
@@ -81,7 +105,9 @@ export default function LiveTicker() {
     <div className="flex items-center justify-between gap-3 border-2 border-[var(--color-ink)] bg-[var(--color-card)] px-3 py-2 shadow-hard-sm">
       <div className="min-w-0">
         <p className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-ink-soft)]">
-          {hasLive ? `live · last ${Math.round(pulse.windowMinutes / 60)}h` : "seeded baseline"}
+          {hasLive
+            ? `live · last ${Math.round(pulse.windowMinutes / 60)}h`
+            : "seeded baseline"}
         </p>
         {hasLive ? (
           <p className="font-mono text-[12px] text-[var(--color-ink)]">

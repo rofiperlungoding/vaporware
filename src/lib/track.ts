@@ -20,6 +20,9 @@ function sendToNovus(event: string, props?: TrackProps): void {
 
 export function track(event: string, props?: TrackProps): void {
   if (typeof window === "undefined") return;
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[vaporware:track]", event, props ?? {});
+  }
   try {
     sendToNovus(event, props);
   } catch {

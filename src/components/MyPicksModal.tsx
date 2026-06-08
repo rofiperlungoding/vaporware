@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import type { Account, Pick } from "@/lib/profile";
 import { FEATURES } from "@/lib/config";
@@ -27,6 +27,14 @@ export default function MyPicksModal({
     };
   }, [picks]);
 
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -42,6 +50,9 @@ export default function MyPicksModal({
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
         className="flex max-h-[85vh] w-full max-w-md flex-col border-2 border-[var(--color-ink)] bg-[var(--color-card)] shadow-hard"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Your picks"
       >
         <div className="flex items-start justify-between border-b-2 border-[var(--color-ink)] p-5">
           <div>

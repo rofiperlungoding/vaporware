@@ -34,6 +34,7 @@ import SignupNudge from "./SignupNudge";
 import Receipt from "./Receipt";
 import TrustDisclosure from "./TrustDisclosure";
 import { hasSeenDisclosure, markDisclosure } from "@/lib/trust";
+import { maybeRunDemo } from "@/lib/demo";
 
 type Phase = "swipe" | "checkout" | "reveal";
 type Outcome = "paid" | "bailed" | "passed";
@@ -100,6 +101,7 @@ export default function Arcade() {
   }, []);
 
   useEffect(() => {
+    maybeRunDemo();
     if (FEATURES.themedDecks) {
       const k = getDeckPref();
       deckKeyRef.current = k;

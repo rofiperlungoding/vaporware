@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { saveAccount, type Account } from "@/lib/profile";
 import { getSessionId } from "@/lib/session";
@@ -23,6 +23,14 @@ export default function AccountModal({
   const [email, setEmail] = useState("");
   const [agreed, setAgreed] = useState(hasConsent());
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   function submit() {
     if (name.trim().length < 2) {
@@ -67,6 +75,9 @@ export default function AccountModal({
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
         className="w-full max-w-sm border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-6 shadow-hard"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Save your picks"
       >
         <h3 className="font-display text-xl font-bold text-[var(--color-ink)]">
           Save your picks

@@ -140,6 +140,9 @@ export default function SubmitModal({
         transition={{ type: "spring", stiffness: 320, damping: 26 }}
         className="w-full max-w-md border-2 border-[var(--color-ink)] bg-[var(--color-card)] p-6 shadow-hard"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Submit an idea"
       >
         {phase === "form" ? (
           <>
